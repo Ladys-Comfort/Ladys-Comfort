@@ -1,0 +1,510 @@
+/* =====================================================
+   LADYS COMFORT — Inicio
+   Portada editorial: sin fotos de producto, el peso lo
+   llevan la tipografía, el color de marca y el sello.
+===================================================== */
+
+/* ── Ritmo de secciones ─────────────────────────── */
+section {
+  padding:7rem 2.5rem;
+  max-width:1140px;
+  margin:0 auto;
+}
+
+.sec-head {
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:2.5rem; flex-wrap:wrap;
+  padding-bottom:1.6rem; margin-bottom:3rem;
+  border-bottom:1px solid var(--border);
+}
+.sec-aside {
+  font-size:.9rem; color:var(--muted); line-height:1.7;
+  max-width:290px; text-align:right;
+}
+
+.section-eyebrow {
+  font-size:.72rem; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--neon);
+  margin-bottom:.9rem;
+}
+.section-title {
+  font-family:var(--disp);
+  font-size:clamp(2rem, 4vw, 3.1rem);
+  font-weight:700; line-height:1.05;
+  letter-spacing:-.02em;
+  color:var(--white);
+}
+
+/* ════════════════════════════════════════════════
+   HERO
+════════════════════════════════════════════════ */
+#hero {
+  min-height:clamp(640px, 94vh, 900px);
+  max-width:none; width:100%;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center;
+  position:relative; overflow:hidden;
+  padding:9rem 1.5rem 6rem;
+}
+
+/* Textura de seda (Pexels, licencia libre para uso comercial).
+   El velo encima es el que garantiza el contraste del texto:
+   sin él la foto es demasiado clara para leer sobre ella. */
+#hero::before {
+  content:''; position:absolute; inset:0; z-index:0;
+  /* Dos capas en el mismo pseudoelemento: el velo va arriba de la foto.
+     Si se separara en ::after, taparía también las auroras. */
+  background-image:
+    linear-gradient(to bottom,
+      rgba(10,8,12,.90) 0%,
+      rgba(10,8,12,.84) 45%,
+      rgba(10,8,12,.96) 100%),
+    url('../imagenes/hero-seda-sm.jpg');
+  background-size:cover, cover;
+  background-position:center, center;
+  background-repeat:no-repeat, no-repeat;
+}
+@media (min-width:901px) {
+  #hero::before {
+    background-image:
+      linear-gradient(to bottom,
+        rgba(10,8,12,.90) 0%,
+        rgba(10,8,12,.84) 45%,
+        rgba(10,8,12,.96) 100%),
+      url('../imagenes/hero-seda.jpg');
+  }
+}
+
+/* Aurora sobre la seda.
+   Sin `filter: blur()`: desenfocar capas de 700px es carísimo de componer
+   y llegaba a congelar el render. Un degradado radial ya es suave por sí
+   mismo y sólo animamos `transform`, que va en la GPU. */
+.hero-bg { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.hero-blob { position:absolute; border-radius:50%; }
+.hero-blob-1 {
+  width:min(90vw,900px); aspect-ratio:1;
+  background:radial-gradient(circle closest-side, var(--neon-glow), transparent 100%);
+  top:-30%; left:50%; transform:translateX(-50%);
+  opacity:.75; animation:auroraA 16s ease-in-out infinite;
+}
+.hero-blob-2 {
+  width:min(70vw,700px); aspect-ratio:1;
+  background:radial-gradient(circle closest-side, rgba(150,60,220,.22), transparent 100%);
+  bottom:-24%; right:-4%;
+  animation:auroraB 20s ease-in-out infinite;
+}
+
+@keyframes auroraA {
+  0%,100% { transform:translateX(-50%) translateY(0) scale(1); }
+  50%     { transform:translateX(-50%) translateY(34px) scale(1.08); }
+}
+@keyframes auroraB {
+  0%,100% { transform:translateY(0) scale(1); }
+  50%     { transform:translateY(-30px) scale(1.1); }
+}
+
+.hero-content {
+  position:relative; z-index:1;
+  max-width:880px; width:100%;
+  display:flex; flex-direction:column; align-items:center;
+  animation:heroIn .9s var(--ease-out) both;
+}
+@keyframes heroIn {
+  from { opacity:0; transform:translateY(22px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Sello de marca */
+.hero-seal {
+  width:94px; height:94px; border-radius:50%;
+  background:#fff;
+  display:grid; place-items:center;
+  margin-bottom:2rem;
+  border:1px solid var(--border-hi);
+  box-shadow:0 0 0 10px var(--neon-faint), 0 14px 44px var(--neon-glow);
+  animation:sealFloat 7s ease-in-out infinite;
+}
+.hero-seal img { width:86px; height:86px; border-radius:50%; object-fit:cover; }
+@keyframes sealFloat {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-8px); }
+}
+
+.hero-tag {
+  display:inline-block;
+  font-size:.7rem; font-weight:600; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--neon);
+  border:1px solid var(--border-hi); padding:.45rem 1.1rem;
+  border-radius:40px; margin-bottom:1.8rem;
+  background:var(--neon-faint);
+}
+
+.hero-h1 {
+  font-family:var(--disp);
+  font-size:clamp(2.9rem, 8.5vw, 6.2rem);
+  font-weight:700; line-height:.98;
+  letter-spacing:-.035em;
+  color:var(--white);
+  margin-bottom:1.6rem;
+}
+.hero-h1 em {
+  display:block;
+  font-style:italic; font-weight:400;
+  color:var(--neon);
+  letter-spacing:-.02em;
+}
+
+.hero-sub {
+  font-size:clamp(1rem, 1.5vw, 1.15rem);
+  color:var(--muted); line-height:1.75;
+  max-width:520px; margin-bottom:2.6rem;
+}
+
+.hero-ctas { display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; }
+
+.btn-prim {
+  display:inline-flex; align-items:center; gap:.6rem;
+  padding:1rem 2.1rem; border-radius:40px;
+  background:var(--neon); color:#fff;
+  font-weight:600; font-size:.95rem; letter-spacing:.01em;
+  box-shadow:0 8px 30px var(--neon-glow);
+  transition:transform var(--trans), box-shadow var(--trans);
+}
+.btn-prim:hover { transform:translateY(-2px); box-shadow:0 14px 40px var(--neon-glow); }
+.btn-prim svg { width:17px; height:17px; transition:transform var(--trans); }
+.btn-prim:hover svg { transform:translateX(4px); }
+
+.btn-ghost {
+  display:inline-flex; align-items:center;
+  padding:1rem 2.1rem; border-radius:40px;
+  color:var(--text); font-weight:500; font-size:.95rem;
+  border:1px solid var(--border-hi);
+  transition:all var(--trans);
+}
+.btn-ghost:hover { border-color:var(--neon); color:var(--neon); background:var(--neon-faint); }
+
+/* Cifras del hero */
+.hero-stats {
+  display:flex; gap:clamp(1.5rem,5vw,4rem);
+  margin-top:4rem; padding-top:2rem;
+  border-top:1px solid var(--border);
+  flex-wrap:wrap; justify-content:center;
+}
+.hero-stats dt {
+  font-family:var(--disp); font-size:2.3rem; font-weight:700;
+  color:var(--neon); line-height:1;
+}
+.hero-stats dd {
+  font-size:.74rem; color:var(--muted); margin-top:.45rem;
+  letter-spacing:.1em; text-transform:uppercase;
+}
+
+/* Indicador de scroll */
+.hero-scroll {
+  position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
+  width:26px; height:42px; border-radius:20px;
+  border:1px solid var(--border-hi);
+  display:grid; place-items:start center; padding-top:8px;
+  z-index:1; opacity:.75; transition:opacity var(--trans);
+}
+.hero-scroll:hover { opacity:1; }
+.hero-scroll span {
+  width:3px; height:8px; border-radius:2px; background:var(--neon);
+  animation:scrollDot 1.8s ease-in-out infinite;
+}
+@keyframes scrollDot {
+  0%,100% { transform:translateY(0); opacity:1; }
+  50%     { transform:translateY(12px); opacity:.2; }
+}
+
+/* ════════════════════════════════════════════════
+   FRANJA EN MOVIMIENTO
+════════════════════════════════════════════════ */
+.marquee {
+  overflow:hidden; white-space:nowrap;
+  background:var(--neon);
+  padding:.9rem 0;
+  border-top:1px solid var(--neon);
+  border-bottom:1px solid var(--neon);
+}
+.marquee-track {
+  display:inline-flex; align-items:center; gap:2.2rem;
+  animation:marquee 32s linear infinite;
+  will-change:transform;
+}
+.marquee span {
+  font-size:.78rem; font-weight:600; letter-spacing:.22em;
+  text-transform:uppercase; color:#fff;
+}
+.marquee i { color:rgba(255,255,255,.55); font-style:normal; font-size:.7rem; }
+@keyframes marquee {
+  from { transform:translateX(0); }
+  to   { transform:translateX(-50%); }
+}
+
+/* ════════════════════════════════════════════════
+   ENCUENTRA TU TALLA
+════════════════════════════════════════════════ */
+.size-links {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--border);
+}
+.size-link {
+  position:relative;
+  display:flex; flex-direction:column; gap:.3rem;
+  padding:2.4rem 1.6rem;
+  border-bottom:1px solid var(--border);
+  border-right:1px solid var(--border);
+  transition:background var(--trans), padding-left var(--trans);
+  overflow:hidden;
+}
+.size-link:first-child { border-left:1px solid var(--border); }
+.size-link::before {
+  content:''; position:absolute; inset:0;
+  background:var(--neon); transform:translateY(101%);
+  transition:transform .4s var(--ease-out);
+}
+.size-link:hover::before { transform:translateY(0); }
+.size-link > * { position:relative; z-index:1; }
+
+.size-letter {
+  font-family:var(--disp); font-size:3rem; font-weight:700;
+  color:var(--neon); line-height:1; letter-spacing:-.02em;
+  transition:color var(--trans);
+}
+.size-meta {
+  font-size:.75rem; color:var(--muted);
+  letter-spacing:.08em; text-transform:uppercase;
+  transition:color var(--trans);
+}
+.size-go {
+  position:absolute; top:1.4rem; right:1.4rem;
+  font-size:1.1rem; color:var(--muted);
+  opacity:0; transform:translateX(-6px);
+  transition:all var(--trans);
+}
+.size-link:hover .size-letter,
+.size-link:hover .size-meta,
+.size-link:hover .size-go { color:#fff; }
+.size-link:hover .size-go { opacity:1; transform:translateX(0); }
+
+/* ════════════════════════════════════════════════
+   CÓMO COMPRAR
+════════════════════════════════════════════════ */
+.pasos-list {
+  list-style:none;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+}
+.paso {
+  padding:0 2rem 0 0;
+  border-left:1px solid var(--border);
+  padding-left:2rem;
+}
+.paso:first-child { border-left:none; padding-left:0; }
+.paso-num {
+  display:block;
+  font-family:var(--disp); font-size:3.4rem; font-weight:700;
+  line-height:1; letter-spacing:-.03em;
+  color:transparent;
+  -webkit-text-stroke:1px var(--border-hi);
+  margin-bottom:1.2rem;
+  transition:color .35s ease;
+}
+.paso:hover .paso-num { color:var(--neon-faint); }
+.paso h3 {
+  font-family:var(--disp); font-size:1.25rem; font-weight:600;
+  color:var(--white); margin-bottom:.6rem;
+}
+.paso p { font-size:.9rem; color:var(--muted); line-height:1.75; }
+
+/* ════════════════════════════════════════════════
+   POR QUÉ ELEGIRNOS
+════════════════════════════════════════════════ */
+.features-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:1px; background:var(--border);
+  border:1px solid var(--border);
+  border-radius:var(--rad-lg); overflow:hidden;
+}
+.feature-card {
+  background:var(--dark);
+  padding:2.4rem 2rem;
+  transition:background var(--trans);
+}
+.feature-card:hover { background:var(--dark-2); }
+
+.feat-icon {
+  width:42px; height:42px;
+  display:grid; place-items:center;
+  color:var(--neon); margin-bottom:1.4rem;
+}
+.feat-icon svg { width:26px; height:26px; }
+.feature-card h3 {
+  font-family:var(--disp); font-size:1.1rem; font-weight:600;
+  color:var(--white); margin-bottom:.5rem;
+}
+.feature-card p { font-size:.88rem; color:var(--muted); line-height:1.7; }
+
+/* ════════════════════════════════════════════════
+   CTA
+════════════════════════════════════════════════ */
+/* Subtítulo suelto, por si alguna sección no usa .sec-head */
+.section-sub {
+  color:var(--muted); font-size:.95rem;
+  max-width:520px; margin:.9rem 0 2.5rem;
+}
+
+#cta { padding-top:2rem; padding-bottom:5rem; }
+#contacto { padding-top:5rem; }
+.cta-inner {
+  border-radius:var(--rad-lg);
+  padding:5.5rem 3rem; text-align:center;
+  position:relative; overflow:hidden;
+  background:url('../imagenes/cta-seda-sm.jpg') center/cover no-repeat;
+  border:1px solid var(--border);
+}
+@media (min-width:901px) {
+  .cta-inner { background-image:url('../imagenes/cta-seda.jpg'); }
+}
+/* Velo oscuro: el satín es muy claro y el texto no se leería encima. */
+.cta-inner::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(150deg, rgba(14,6,12,.86), rgba(30,6,20,.78));
+}
+.cta-inner > * { position:relative; }
+.cta-inner h2 {
+  font-family:var(--disp);
+  font-size:clamp(1.9rem,3.6vw,2.9rem);
+  font-weight:700; line-height:1.08; letter-spacing:-.02em;
+  color:#fff; margin-bottom:.9rem;
+}
+.cta-inner p { color:rgba(255,255,255,.78); margin-bottom:2.2rem; font-size:1rem; }
+.cta-inner .btn-prim { margin:0 auto; }
+
+/* ════════════════════════════════════════════════
+   CONTACTO
+════════════════════════════════════════════════ */
+.contacto-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:1.2rem;
+}
+.cont-card {
+  display:flex; align-items:center; gap:1.2rem;
+  padding:1.9rem;
+  border:1px solid var(--border); border-radius:var(--rad-lg);
+  background:var(--dark-2);
+  transition:border-color var(--trans), transform var(--trans);
+}
+.cont-card:hover { border-color:var(--neon); transform:translateY(-3px); }
+.cont-icon {
+  width:48px; height:48px; border-radius:50%;
+  background:var(--neon-faint); border:1px solid var(--border);
+  display:grid; place-items:center; flex-shrink:0;
+  color:var(--neon);
+}
+.cont-icon svg { width:22px; height:22px; }
+.cont-info span { display:block; }
+.cont-plat {
+  font-size:.68rem; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.16em;
+}
+.cont-handle { font-weight:600; color:var(--white); font-size:1rem; margin-top:.15rem; }
+.cont-card-wa .cont-icon {
+  color:var(--green);
+  border-color:rgba(37,211,102,.25);
+  background:rgba(37,211,102,.1);
+}
+
+/* ════════════════════════════════════════════════
+   FOOTER — oscuro en ambos temas, ancla la página
+════════════════════════════════════════════════ */
+footer {
+  background:#0a080c;
+  border-top:1px solid rgba(255,63,150,.18);
+  padding:3rem 2.5rem;
+  margin-top:4rem;
+}
+.footer-inner {
+  max-width:1140px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:1.4rem;
+}
+.footer-logo {
+  font-family:var(--disp); font-size:1.2rem; font-weight:600;
+  color:#fff; letter-spacing:.01em;
+}
+.footer-copy { font-size:.78rem; color:rgba(240,226,236,.5); }
+.footer-right { display:flex; flex-direction:column; align-items:flex-end; gap:.35rem; }
+.footer-dev, .footer-evelyn {
+  font-size:.76rem; color:rgba(240,226,236,.6);
+  transition:color var(--trans);
+}
+.footer-dev:hover, .footer-evelyn:hover { color:#ff3f96; }
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════════ */
+@media (max-width:900px) {
+  section { padding:5rem 1.5rem; }
+  .sec-head { margin-bottom:2.2rem; }
+  .sec-aside { text-align:left; max-width:100%; }
+  .features-grid { grid-template-columns:1fr 1fr; }
+  .pasos-list { grid-template-columns:1fr; gap:2.4rem; }
+  .paso { border-left:none; padding-left:0; border-top:1px solid var(--border); padding-top:1.6rem; }
+  .paso:first-child { border-top:none; padding-top:0; }
+  .size-links { grid-template-columns:1fr 1fr; }
+  .size-link:nth-child(odd) { border-left:1px solid var(--border); }
+}
+
+@media (max-width:600px) {
+  section { padding:4rem 1.2rem; }
+  #hero { padding:7.5rem 1.2rem 5rem; min-height:auto; }
+  .hero-seal { width:74px; height:74px; margin-bottom:1.5rem; }
+  .hero-seal img { width:66px; height:66px; }
+  .hero-stats { gap:1.6rem; margin-top:3rem; }
+  .hero-stats dt { font-size:1.8rem; }
+  .hero-stats dd { font-size:.66rem; }
+  .hero-ctas { flex-direction:column; width:100%; }
+  .hero-ctas a { justify-content:center; }
+  .hero-scroll { display:none; }
+  .features-grid { grid-template-columns:1fr; }
+  .contacto-grid { grid-template-columns:1fr; }
+  .cta-inner { padding:3.5rem 1.5rem; }
+  .size-letter { font-size:2.4rem; }
+  .footer-inner { flex-direction:column; text-align:center; }
+  .footer-right { align-items:center; }
+}
+
+/* ════════════════════════════════════════════════
+   TEMA CLARO
+════════════════════════════════════════════════ */
+/* En claro el velo se invierte: la seda queda apenas insinuada
+   y el texto oscuro conserva el contraste. */
+[data-theme="light"] #hero::before {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(253,249,251,.80) 0%,
+      rgba(250,240,246,.74) 45%,
+      rgba(253,249,251,.94) 100%),
+    url('../imagenes/hero-seda-sm.jpg');
+}
+@media (min-width:901px) {
+  [data-theme="light"] #hero::before {
+    background-image:
+      linear-gradient(to bottom,
+        rgba(253,249,251,.80) 0%,
+        rgba(250,240,246,.74) 45%,
+        rgba(253,249,251,.94) 100%),
+      url('../imagenes/hero-seda.jpg');
+  }
+}
+[data-theme="light"] .hero-blob-2 {
+  background:radial-gradient(circle, rgba(150,60,190,.14), transparent 70%);
+}
+[data-theme="light"] .feature-card { background:var(--dark-2); }
+[data-theme="light"] .feature-card:hover { background:var(--dark-3); }
+[data-theme="light"] .features-grid { background:var(--border); }
+[data-theme="light"] .cta-inner {
+  background:linear-gradient(150deg, #fff, var(--dark-3));
+}
+[data-theme="light"] .cta-inner::before { opacity:.35; }

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de pijamas por talla | Ladys Comfort</title>
+  <link rel="icon" href="icono-ladys.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="description" content="Explora toda la colección de pijamas Ladys Comfort y filtra por talla S, M, L o XL. Pedidos por WhatsApp con envíos a Medellín y Bello.">
+  <meta name="theme-color" content="#0a080c">
+
+  <!-- Redes sociales -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Ladys Comfort">
+  <meta property="og:title" content="Catálogo de pijamas | Ladys Comfort">
+  <meta property="og:description" content="Filtra por tu talla y encuentra el pijama perfecto. Envíos a Medellín y Bello.">
+  <meta property="og:image" content="logo.png">
+  <meta property="og:locale" content="es_CO">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/catalogo.css">
+  <script src="js/theme.js"></script>
+  <script src="js/utils.js"></script>
+</head>
+<body>
+
+<a href="#products-grid" class="skip-link">Saltar al catálogo</a>
+
+<!-- ─── CART OVERLAY ─── -->
+<div id="cart-overlay"></div>
+
+<!-- ─── CART PANEL ─── -->
+<aside id="cart-panel" role="dialog" aria-modal="true" aria-label="Tu selección" aria-hidden="true" inert>
+  <div class="cart-header">
+    <div>
+      <h2>Tu selección</h2>
+      <p id="cart-count-label" class="cart-count-label"></p>
+    </div>
+    <button class="cart-close" type="button" onclick="closeCartPanel()" aria-label="Cerrar carrito">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M15 5L5 15M5 5l10 10"/>
+      </svg>
+    </button>
+  </div>
+  <div id="cart-body"></div>
+  <div id="cart-foot">
+    <div class="cart-total-row">
+      <span>Total</span>
+      <span id="cart-total">$0</span>
+    </div>
+    <button class="btn-wa" type="button" onclick="sendWhatsApp()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Pedir por WhatsApp
+    </button>
+    <div class="cart-foot-links">
+      <button type="button" class="cart-clear" onclick="clearCart()">Vaciar carrito</button>
+      <p class="cart-note">Te respondemos directamente 🌸</p>
+    </div>
+  </div>
+</aside>
+
+<!-- ─── HEADER ─── -->
+<header>
+  <nav id="navbar" aria-label="Navegación principal">
+    <a href="index.html" class="nav-logo">
+      <img src="logo.png" class="logo-img" alt="" width="42" height="42">
+      Ladys Comfort
+    </a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html"    class="nav-link">Inicio</a></li>
+      <li><a href="catalogo.html" class="nav-link active" aria-current="page">Catálogo</a></li>
+      <li><a href="index.html#contacto" class="nav-link">Contacto</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Cambiar tema">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+      <button class="cart-btn" type="button" onclick="openCartPanel()" aria-label="Abrir carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-badge">0</span>
+      </button>
+      <button class="menu-toggle" type="button" id="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
+<div class="nav-backdrop" id="nav-backdrop"></div>
+
+<!-- ─── PAGE ─── -->
+<main class="cat-page">
+
+  <!-- Hero header -->
+  <div class="cat-hero">
+    <div class="cat-hero-inner">
+      <div>
+        <p class="cat-eyebrow">✦ Colección completa</p>
+        <h1>Catálogo de pijamas</h1>
+        <p>Filtra por tu talla y encuentra el conjunto perfecto</p>
+      </div>
+      <span id="results-count" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="cat-toolbar">
+   <div class="cat-toolbar-inner">
+
+    <!-- Filtros por TALLA -->
+    <div class="filter-group">
+      <div class="filter-head">
+        <span class="filter-title">Talla</span>
+        <button type="button" class="filter-guide" onclick="openSizeGuide()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <circle cx="10" cy="10" r="7.5"/><path d="M8 7.5a2 2 0 113 1.8c-.6.4-1 .8-1 1.7"/><line x1="10" y1="14" x2="10" y2="14"/>
+          </svg>
+          Guía de tallas
+        </button>
+      </div>
+      <div class="filter-bar" role="group" aria-label="Filtrar por talla">
+        <button class="filter-btn on" type="button" data-f="todas" aria-pressed="true" onclick="setSizeFilter('todas')">
+          Todas <span class="f-count"></span>
+        </button>
+        <button class="filter-btn" type="button" data-f="S" aria-pressed="false" onclick="setSizeFilter('S')">
+          S <span class="f-count"></span>
+        </button>
+        <button class="filter-btn" type="button" data-f="M" aria-pressed="false" onclick="setSizeFilter('M')">
+          M <span class="f-count"></span>
+        </button>
+        <button class="filter-btn" type="button" data-f="L" aria-pressed="false" onclick="setSizeFilter('L')">
+          L <span class="f-count"></span>
+        </button>
+        <button class="filter-btn" type="button" data-f="XL" aria-pressed="false" onclick="setSizeFilter('XL')">
+          XL <span class="f-count"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Búsqueda + orden -->
+    <div class="toolbar-right">
+      <div class="cat-search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <label for="cat-search" class="sr-only">Buscar pijama</label>
+        <input type="search" id="cat-search" placeholder="Buscar pijama..." autocomplete="off">
+        <button type="button" id="search-clear" class="search-clear" onclick="clearSearch()" aria-label="Borrar búsqueda">×</button>
+      </div>
+
+      <div class="sorter">
+        <label for="sorter-sel">Ordenar:</label>
+        <select id="sorter-sel" onchange="setSorter(this.value)">
+          <option value="nuevo">Más recientes</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre">Nombre A–Z</option>
+        </select>
+      </div>
+    </div>
+   </div>
+  </div>
+
+  <!-- Chips de filtros activos -->
+  <div class="active-filters" id="active-filters"></div>
+
+  <!-- Grid -->
+  <div class="cat-main">
+    <div id="products-grid">
+      <!-- Renderizado por JS -->
+    </div>
+  </div>
+
+</main>
+
+<!-- ════════════════════════════════════════════════
+     MODAL — VISTA RÁPIDA
+════════════════════════════════════════════════ -->
+<div id="quick-modal" class="lc-modal" role="dialog" aria-modal="true" aria-labelledby="quick-title" aria-hidden="true" inert>
+  <div class="quick-box">
+    <button type="button" class="modal-x" onclick="closeQuick()" aria-label="Cerrar vista rápida">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M15 5L5 15M5 5l10 10"/>
+      </svg>
+    </button>
+    <div id="quick-content" class="quick-content"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MODAL — GUÍA DE TALLAS
+════════════════════════════════════════════════ -->
+<div id="guide-modal" class="lc-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-hidden="true" inert>
+  <div class="guide-box">
+    <button type="button" class="modal-x" onclick="closeSizeGuide()" aria-label="Cerrar guía de tallas">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M15 5L5 15M5 5l10 10"/>
+      </svg>
+    </button>
+
+    <p class="cat-eyebrow">✦ Encuentra tu talla</p>
+    <h2 id="guide-title">Guía de tallas</h2>
+    <p class="guide-sub">Medidas en centímetros. Si estás entre dos tallas, te recomendamos la mayor para dormir más cómoda.</p>
+
+    <div class="guide-table-wrap">
+      <table class="guide-table">
+        <caption class="sr-only">Equivalencia de tallas y medidas corporales</caption>
+        <thead>
+          <tr>
+            <th scope="col">Talla</th>
+            <th scope="col">Busto</th>
+            <th scope="col">Cintura</th>
+            <th scope="col">Cadera</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">S</th><td>82 – 88</td><td>64 – 70</td><td>88 – 94</td></tr>
+          <tr><th scope="row">M</th><td>89 – 95</td><td>71 – 77</td><td>95 – 101</td></tr>
+          <tr><th scope="row">L</th><td>96 – 102</td><td>78 – 85</td><td>102 – 108</td></tr>
+          <tr><th scope="row">XL</th><td>103 – 110</td><td>86 – 93</td><td>109 – 116</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="guide-tips">
+      <li>Mide sobre ropa ligera, sin apretar la cinta métrica.</li>
+      <li>Nuestros pijamas tienen corte holgado y tela con caída.</li>
+      <li>¿Dudas? Escríbenos por WhatsApp y te ayudamos a elegir.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─── FLOAT BUTTONS ─── -->
+<button id="cart-float" type="button" onclick="openCartPanel()" aria-label="Abrir carrito">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <path d="M16 10a4 4 0 01-8 0"/>
+  </svg>
+  <span class="cart-badge">0</span>
+</button>
+
+<button id="to-top" type="button" aria-label="Volver arriba">
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path d="M10 16V4M4 10l6-6 6 6"/>
+  </svg>
+</button>
+
+<!-- ─── FIREBASE + SCRIPTS ─── -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/catalogo.js"></script>
+
+</body>
+</html>
