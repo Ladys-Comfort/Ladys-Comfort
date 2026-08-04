@@ -103,18 +103,40 @@ function releaseFocus(container) {
 
 // ── Bloqueo de scroll sin saltos ────────────────────
 let scrollLocks = 0;
+let savedScrollY = 0;
 
 function lockScroll() {
   if (scrollLocks++ > 0) return;
+  savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
+  // `overflow:hidden` en body NO frena el scroll en iOS Safari: al abrir el
+  // carrito o el menú estando abajo, la página seguía moviéndose detrás y
+  // todo se descuadraba. Hay que fijar el body y recordar la posición.
   const gap = window.innerWidth - document.documentElement.clientWidth;
-  document.body.style.overflow = "hidden";
-  if (gap > 0) document.body.style.paddingRight = gap + "px";
+  const b = document.body.style;
+  b.position = "fixed";
+  b.top      = `-${savedScrollY}px`;
+  b.left     = "0";
+  b.right    = "0";
+  b.width    = "100%";
+  b.overflow = "hidden";
+  if (gap > 0) b.paddingRight = gap + "px";
 }
 
 function unlockScroll(force = false) {
   if (force) scrollLocks = 0;
   else scrollLocks = Math.max(0, scrollLocks - 1);
   if (scrollLocks > 0) return;
-  document.body.style.overflow = "";
-  document.body.style.paddingRight = "";
+
+  const b = document.body.style;
+  b.position = ""; b.top = ""; b.left = ""; b.right = "";
+  b.width = ""; b.overflow = ""; b.paddingRight = "";
+
+  // Devolver el scroll debe ser instantáneo: con `scroll-behavior:smooth`
+  // el cierre del panel se vería como un salto animado hasta la posición.
+  const html = document.documentElement;
+  const prev = html.style.scrollBehavior;
+  html.style.scrollBehavior = "auto";
+  window.scrollTo(0, savedScrollY);
+  html.style.scrollBehavior = prev;
 }

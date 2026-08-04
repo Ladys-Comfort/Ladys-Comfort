@@ -21,6 +21,9 @@ const COLOR_MAP = {
 let allProducts = [];
 let quickId     = null;
 let galleryIdx  = 0;
+// La entrada escalonada sólo debe correr una vez: relanzarla en cada
+// cambio de filtro se percibe como parpadeo de todas las fotos.
+let primerRender = true;
 
 let state = { size: "todas", q: "", sort: "nuevo" };
 
@@ -104,6 +107,7 @@ function render() {
   }
 
   grid.innerHTML = list.map((p, i) => buildCard(p, i)).join("");
+  primerRender = false;
 }
 
 /** Explica el resultado vacío según lo que el usuario realmente filtró. */
@@ -142,11 +146,10 @@ function buildCard(p, index = 0) {
     p.isFeatured ? `<span class="badge b-feat">✦ Destacado</span>` : ""
   ].join("");
 
-  // Fondo desenfocado de la misma foto: la imagen se ve COMPLETA (contain)
-  // y el espacio sobrante se rellena con su propio color en vez de bordes vacíos.
+  // La imagen se ve COMPLETA (contain) sobre el color de fondo del marco.
+  // Sin copia desenfocada: 25 capas de blur hacían parpadear el scroll móvil.
   const visual = imgs.length
-    ? `<img src="${esc(imgs[0])}" alt="" class="pcard-blur" ${loadAttr} decoding="async" aria-hidden="true">
-       <img src="${esc(imgs[0])}" alt="${esc(p.name)}" class="pcard-img" ${loadAttr} decoding="async">
+    ? `<img src="${esc(imgs[0])}" alt="${esc(p.name)}" class="pcard-img" ${loadAttr} decoding="async">
        ${imgs[1] ? `<img src="${esc(imgs[1])}" alt="" class="pcard-img pcard-img-alt" loading="lazy" decoding="async" aria-hidden="true">` : ""}`
     : `<div class="pcard-pattern"></div>
        <div class="pcard-icon">
@@ -168,7 +171,8 @@ function buildCard(p, index = 0) {
   const lowStock = stock > 0 && stock <= 3;
 
   return `
-  <article class="pcard${stock ? "" : " pcard-out"}" data-id="${esc(p.id)}"
+  <article class="pcard${stock ? "" : " pcard-out"}${primerRender ? " pcard-in" : ""}"
+           data-id="${esc(p.id)}"
            style="--swatch:${swatch};--i:${Math.min(index, 11)}">
     <div class="pcard-visual">
       ${visual}

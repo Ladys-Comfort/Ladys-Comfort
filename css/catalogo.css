@@ -175,14 +175,24 @@
   display:flex; flex-direction:column;
   box-shadow:var(--shadow-1);
   transition:border-color var(--trans), transform var(--trans), box-shadow var(--trans);
-  /* Entrada escalonada: --i lo pone el JS con el índice de la tarjeta */
+}
+
+/* Entrada escalonada SÓLO en la primera carga. Si se relanza en cada
+   cambio de filtro, las 25 tarjetas vuelven a aparecer de cero y se ve
+   como un parpadeo. --i lo pone el JS con el índice de la tarjeta. */
+.pcard-in {
   animation:fadeUp .45s var(--ease-out) both;
   animation-delay:calc(var(--i, 0) * 45ms);
 }
-.pcard:hover {
-  border-color:var(--border-hi);
-  transform:translateY(-5px);
-  box-shadow:var(--shadow-2);
+
+/* Los efectos de hover sólo en dispositivos con puntero real: en táctil
+   el :hover se queda pegado tras el toque y la foto alterna sola. */
+@media (hover:hover) and (pointer:fine) {
+  .pcard:hover {
+    border-color:var(--border-hi);
+    transform:translateY(-5px);
+    box-shadow:var(--shadow-2);
+  }
 }
 .pcard-out { opacity:.72; }
 
@@ -196,29 +206,26 @@
   overflow:hidden;
 }
 
-.pcard-blur {
-  position:absolute; inset:0;
-  width:100%; height:100%;
-  object-fit:cover;
-  filter:blur(26px) saturate(1.35);
-  transform:scale(1.25);
-  opacity:.55;
-  z-index:0;
-}
-[data-theme="light"] .pcard-blur { opacity:.42; }
-
+/* Aquí NO va fondo desenfocado. Con 25 tarjetas eran 25 capas de
+   `filter: blur()` recomponiéndose en cada scroll, lo que hacía parpadear
+   las fotos en móvil. Como la proporción 3/4 del marco ya coincide con las
+   fotos del catálogo, el desenfoque no se notaba: basta el color de fondo.
+   (En la vista rápida sí se conserva: ahí es una sola imagen.) */
 .pcard-img {
   position:relative; z-index:1;
   width:100%; height:100%;
   object-fit:contain;            /* ← imagen completa */
   padding:.4rem;
-  transition:opacity .4s ease, transform .5s ease;
+  transition:transform .5s ease;
 }
-.pcard:hover .pcard-img { transform:scale(1.04); }
 
-/* Segunda foto en hover (si el producto tiene más de una) */
+/* Segunda foto (si el producto tiene más de una) */
 .pcard-img-alt { position:absolute; inset:0; opacity:0; }
-.pcard:hover .pcard-img-alt { opacity:1; }
+
+@media (hover:hover) and (pointer:fine) {
+  .pcard:hover .pcard-img { transform:scale(1.04); }
+  .pcard:hover .pcard-img-alt { opacity:1; }
+}
 
 /* Sin foto: patrón decorativo con el color del producto */
 .pcard-pattern {
@@ -520,9 +527,19 @@
 @media (max-width:768px) {
   .cat-hero { padding:2.4rem 1.2rem 1.8rem; }
   .cat-toolbar, .active-filters, .cat-main { padding-left:1.2rem; padding-right:1.2rem; }
-  .cat-toolbar { flex-direction:column; align-items:stretch; gap:1.1rem; }
+  /* Los hijos flex viven en .cat-toolbar-inner, no en .cat-toolbar:
+     apilar el contenedor equivocado dejaba filtros y búsqueda lado a lado. */
+  .cat-toolbar-inner { flex-direction:column; align-items:stretch; gap:1.1rem; }
   .toolbar-right { flex-direction:column; align-items:stretch; }
   .cat-search-box { min-width:0; }
+  /* Sin esto, un hijo flex no baja de su ancho de contenido y desborda */
+  .filter-group, .toolbar-right, .filter-head { min-width:0; }
+  /* El desenfoque de la barra fija sobre fotos en scroll provoca
+     repintados y parpadeo en GPU móvil: fondo opaco en su lugar. */
+  .cat-toolbar {
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+    background:var(--dark);
+  }
   .sorter { justify-content:space-between; }
   .sorter select { flex:1; }
   .filter-bar { overflow-x:auto; flex-wrap:nowrap; padding-bottom:.3rem; margin:0 -1.2rem; padding-left:1.2rem; padding-right:1.2rem; }
