@@ -4,14 +4,21 @@
 // orden y vista rápida con galería.
 // =====================================================
 
-const SIZES = ["S", "M", "L", "XL"];
+// "U" = talla única. Es una talla más dentro de `sizes`, así el stock,
+// el agotado y el carrito funcionan igual que con S/M/L/XL.
+const SIZES      = ["S", "M", "L", "XL", "U"];
+// Las cuatro tallas normales, que son las que se muestran como pastillas
+// cuando el producto NO es de talla única.
+const SIZES_BASE = ["S", "M", "L", "XL"];
 
 const SIZE_LABELS = {
   S:  "Talla S",
   M:  "Talla M",
   L:  "Talla L",
-  XL: "Talla XL"
+  XL: "Talla XL",
+  U:  "Talla única"
 };
+
 
 const COLOR_MAP = {
   rosa: "#ff3f96", azul: "#4da6ff", amarillo: "#ffe040",
@@ -31,6 +38,8 @@ let state = { size: "todas", q: "", sort: "nuevo" };
 const stockOf      = (p, s) => Number(p?.sizes?.[s]) || 0;
 const totalStock   = p => SIZES.reduce((sum, s) => sum + stockOf(p, s), 0);
 const availSizes   = p => SIZES.filter(s => stockOf(p, s) > 0);
+/** Producto de talla única: se muestra con una sola pastilla, no con las 4. */
+const esUnica      = p => stockOf(p, "U") > 0;
 const finalPrice   = p => (p.isOffer && p.offerPrice ? p.offerPrice : p.price) || 0;
 const swatchOf     = p => COLOR_MAP[p.color?.toLowerCase()] || "#b0849a";
 const productById  = id => allProducts.find(p => p.id === id);
@@ -112,11 +121,12 @@ function render() {
 
 /** Explica el resultado vacío según lo que el usuario realmente filtró. */
 function emptyMessage() {
+  const talla = state.size === "U" ? "talla única" : "talla " + esc(state.size);
   if (state.q && state.size !== "todas")
-    return `No encontramos “${esc(state.q)}” en talla ${esc(state.size)}`;
+    return `No encontramos “${esc(state.q)}” en ${talla}`;
   if (state.q)
     return `No encontramos pijamas para “${esc(state.q)}”`;
-  return `No hay pijamas disponibles en talla ${esc(state.size)}`;
+  return `No hay pijamas disponibles en ${talla}`;
 }
 
 // ── Tarjeta ───────────────────────────────────────
@@ -160,13 +170,18 @@ function buildCard(p, index = 0) {
          </svg>
        </div>`;
 
-  const sizesHtml = SIZES.map(s => {
-    const has = stockOf(p, s) > 0;
-    return `<button type="button" class="sz${preset === s ? " on" : ""}" data-size="${s}"
-              ${has ? `onclick="pickSize(this)"` : "disabled"}
-              aria-pressed="${preset === s}"
-              title="${has ? `${SIZE_LABELS[s]} disponible` : `${SIZE_LABELS[s]} agotada`}">${s}</button>`;
-  }).join("");
+  // Si es talla única sólo tiene sentido una pastilla, ya seleccionada:
+  // no hay nada que elegir.
+  const sizesHtml = esUnica(p)
+    ? `<button type="button" class="sz sz-unica on" data-size="U" aria-pressed="true"
+              onclick="pickSize(this)" title="Talla única disponible">Talla única</button>`
+    : SIZES_BASE.map(s => {
+        const has = stockOf(p, s) > 0;
+        return `<button type="button" class="sz${preset === s ? " on" : ""}" data-size="${s}"
+                  ${has ? `onclick="pickSize(this)"` : "disabled"}
+                  aria-pressed="${preset === s}"
+                  title="${has ? `${SIZE_LABELS[s]} disponible` : `${SIZE_LABELS[s]} agotada`}">${s}</button>`;
+      }).join("");
 
   const lowStock = stock > 0 && stock <= 3;
 
@@ -307,16 +322,22 @@ function buildQuick(p) {
   // Conserva la talla que el usuario ya venía filtrando en el catálogo.
   const preset = state.size !== "todas" && stockOf(p, state.size) > 0 ? state.size : null;
 
-  const sizeRows = SIZES.map(s => {
-    const q  = stockOf(p, s);
-    const on = preset === s;
-    return `<button type="button" class="sz sz-lg${on ? " on" : ""}" data-size="${s}"
-              ${q ? `onclick="pickSize(this)"` : "disabled"}
-              aria-pressed="${on}"
-              title="${q ? `${q} disponible${q === 1 ? "" : "s"} en talla ${s}` : `Talla ${s} agotada`}">
-              ${s}${q && q <= 3 ? `<span class="sz-left">${q}</span>` : ""}
-            </button>`;
-  }).join("");
+  const sizeRows = esUnica(p)
+    ? (() => { const q = stockOf(p, "U");
+        return `<button type="button" class="sz sz-lg sz-unica on" data-size="U" aria-pressed="true"
+                  onclick="pickSize(this)" title="${q} disponible${q === 1 ? "" : "s"}">
+                  Talla única${q <= 3 ? `<span class="sz-left">${q}</span>` : ""}
+                </button>`; })()
+    : SIZES_BASE.map(s => {
+        const q  = stockOf(p, s);
+        const on = preset === s;
+        return `<button type="button" class="sz sz-lg${on ? " on" : ""}" data-size="${s}"
+                  ${q ? `onclick="pickSize(this)"` : "disabled"}
+                  aria-pressed="${on}"
+                  title="${q ? `${q} disponible${q === 1 ? "" : "s"} en talla ${s}` : `Talla ${s} agotada`}">
+                  ${s}${q && q <= 3 ? `<span class="sz-left">${q}</span>` : ""}
+                </button>`;
+      }).join("");
 
   return `
     <div class="quick-gallery" style="--swatch:${swatch}">
@@ -486,7 +507,7 @@ function buildActiveChips() {
   const chips = [];
   if (state.size !== "todas") {
     chips.push(`<button type="button" class="achip" onclick="setSizeFilter('todas')">
-      Talla ${esc(state.size)} <span aria-hidden="true">×</span>
+      ${state.size === "U" ? "Talla única" : "Talla " + esc(state.size)} <span aria-hidden="true">×</span>
       <span class="sr-only">Quitar filtro de talla</span></button>`);
   }
   if (state.q) {
@@ -512,7 +533,8 @@ function syncUrl() {
 
 function readUrl() {
   const params = new URLSearchParams(location.search);
-  const talla  = (params.get("talla") || "").toUpperCase();
+  let talla = (params.get("talla") || "").toUpperCase();
+  if (talla === "UNICA" || talla === "ÚNICA") talla = "U";
   if (SIZES.includes(talla)) state.size = talla;
   state.q = params.get("q") || "";
   const orden = params.get("orden");

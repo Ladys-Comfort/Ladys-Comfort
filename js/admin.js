@@ -3,6 +3,14 @@
 // =====================================================
 
 const ADMIN_SIZES = ["S", "M", "L", "XL"];
+// "U" es la talla única. Se guarda como una talla más dentro de `sizes`,
+// así toda la lógica de stock existente (totales, agotado, carrito) sigue
+// funcionando sin cambios y los productos antiguos no se ven afectados.
+const SIZE_UNICA  = "U";
+const TODAS_SIZES = [...ADMIN_SIZES, SIZE_UNICA];
+
+/** Un producto es de talla única si tiene stock en U. */
+const esTallaUnica = p => (Number(p?.sizes?.[SIZE_UNICA]) || 0) > 0;
 const MAX_IMAGES  = 3;
 
 let adminProducts  = [];
@@ -81,12 +89,16 @@ function buildRow(p) {
     : `<strong>${money(p.price)}</strong>`;
 
   // El catálogo filtra por talla, así que el stock por talla va al frente.
-  const total = ADMIN_SIZES.reduce((sum, s) => sum + (Number(p.sizes?.[s]) || 0), 0);
-  const sizePills = ADMIN_SIZES.map(s => {
-    const q = Number(p.sizes?.[s]) || 0;
-    return `<span class="a-size-pill${q ? "" : " empty"}" title="Talla ${s}: ${q} en stock">
-              ${s}<b>${q}</b></span>`;
-  }).join("");
+  const total = TODAS_SIZES.reduce((sum, s) => sum + (Number(p.sizes?.[s]) || 0), 0);
+  const unica = esTallaUnica(p);
+  const sizePills = unica
+    ? `<span class="a-size-pill a-pill-unica" title="Talla única: ${Number(p.sizes[SIZE_UNICA])} en stock">
+         Única<b>${Number(p.sizes[SIZE_UNICA])}</b></span>`
+    : ADMIN_SIZES.map(s => {
+        const q = Number(p.sizes?.[s]) || 0;
+        return `<span class="a-size-pill${q ? "" : " empty"}" title="Talla ${s}: ${q} en stock">
+                  ${s}<b>${q}</b></span>`;
+      }).join("");
 
   const badges = [
     total === 0 ? `<span class="atag tag-out">Agotado</span>`     : "",
@@ -166,6 +178,9 @@ async function openEdit(id) {
     const el = document.getElementById(`f-${s}`);
     if (el) el.value = p.sizes?.[s] ?? 0;
   });
+  document.getElementById("f-is-unica").checked = esTallaUnica(p);
+  document.getElementById("f-U").value = p.sizes?.[SIZE_UNICA] ?? 0;
+  toggleTallaUnica();
   renderPreviews();
   showModal();
 }
@@ -196,11 +211,30 @@ function clearForm() {
   ADMIN_SIZES.forEach(s => {
     const el = document.getElementById(`f-${s}`); if (el) el.value = 0;
   });
+  const elU = document.getElementById("f-U"); if (elU) elU.value = 0;
+  const chkU = document.getElementById("f-is-unica"); if (chkU) chkU.checked = false;
+  toggleTallaUnica();
   existingUrls = []; newFiles = [];
   document.getElementById("previews-grid").innerHTML = "";
   const inp = document.getElementById("f-images");
   if (inp) inp.value = "";
   toggleOfferField();
+}
+
+/** Alterna entre el stock por talla (S/M/L/XL) y un único campo de unidades. */
+function toggleTallaUnica() {
+  const unica = document.getElementById("f-is-unica")?.checked;
+  const grid  = document.getElementById("sizes-grid");
+  const fila  = document.getElementById("unica-row");
+  const hint  = document.getElementById("hint-tallas");
+  if (grid) grid.style.display = unica ? "none" : "grid";
+  if (fila) fila.style.display = unica ? "block" : "none";
+  if (hint) {
+    hint.innerHTML = unica
+      ? 'En la tienda este pijama aparecerá con una sola talla: <strong>Única</strong>.'
+      : 'La tienda filtra por talla: sólo aparecen las tallas con stock mayor a 0. ' +
+        'Si todas quedan en 0, el pijama se muestra como <strong>agotado</strong>.';
+  }
 }
 
 function toggleOfferField() {
@@ -323,10 +357,19 @@ async function saveProduct() {
     adminToast("El precio de oferta debe ser menor al precio normal", "err"); return;
   }
 
+  // Talla única y stock por talla son excluyentes: se guarda uno u otro,
+  // nunca ambos, para que el catálogo no muestre tallas contradictorias.
+  const unica = document.getElementById("f-is-unica").checked;
   const sizes = {};
-  ADMIN_SIZES.forEach(s => {
-    sizes[s] = Math.max(0, parseInt(document.getElementById(`f-${s}`).value, 10) || 0);
-  });
+  if (unica) {
+    ADMIN_SIZES.forEach(s => { sizes[s] = 0; });
+    sizes[SIZE_UNICA] = Math.max(0, parseInt(document.getElementById("f-U").value, 10) || 0);
+  } else {
+    ADMIN_SIZES.forEach(s => {
+      sizes[s] = Math.max(0, parseInt(document.getElementById(`f-${s}`).value, 10) || 0);
+    });
+    sizes[SIZE_UNICA] = 0;
+  }
 
   // El catálogo filtra por talla: sin stock el producto sale como agotado.
   if (!Object.values(sizes).some(q => q > 0)) {

@@ -184,7 +184,7 @@ function renderCartPanel() {
       <div class="cart-item-swatch">${cartItemThumb(item)}</div>
       <div class="cart-item-info">
         <p class="ci-name">${esc(item.name)}</p>
-        <p class="ci-size">Talla ${esc(item.size)}</p>
+        <p class="ci-size">${item.size === "U" ? "Talla única" : "Talla " + esc(item.size)}</p>
         <p class="ci-price">${money(item.price * item.qty)}</p>
         ${atMax ? `<p class="ci-stock">Último disponible en esta talla</p>` : ""}
       </div>
@@ -216,7 +216,7 @@ function renderCartPanel() {
 function sendWhatsApp() {
   if (!cart.length) return;
   const lines = cart.map(i =>
-    `• *${i.name}* — Talla ${i.size} ×${i.qty}  →  ${money(i.price * i.qty)}`
+    `• *${i.name}* — ${i.size === "U" ? "Talla única" : "Talla " + i.size} ×${i.qty}  →  ${money(i.price * i.qty)}`
   ).join("\n");
   const msg =
     `Hola Ladys Comfort 🌸\n\nQuiero hacer este pedido:\n\n${lines}\n\n` +

@@ -508,3 +508,31 @@ footer {
   background:linear-gradient(150deg, #fff, var(--dark-3));
 }
 [data-theme="light"] .cta-inner::before { opacity:.35; }
+
+/* ════════════════════════════════════════════════
+   AJUSTES MÓVIL (no tocan escritorio: todo va bajo 768px)
+════════════════════════════════════════════════ */
+@media (max-width:768px) {
+  /* El clamp de escritorio tiene un mínimo fijo de 2.9rem, así que por
+     debajo de ~546px el título dejaba de escalar y a 320px llegaba al
+     borde exacto. Aquí sí escala con el ancho. */
+  .hero-h1 { font-size:clamp(2.1rem, 11.5vw, 3.4rem); }
+  .hero-sub { font-size:1rem; }
+  .sec-head { gap:1rem; }
+  .section-title { font-size:clamp(1.6rem, 7vw, 2.2rem); }
+}
+
+@media (max-width:380px) {
+  section, #hero { padding-left:1rem; padding-right:1rem; }
+  #tallas .size-links { grid-template-columns:1fr 1fr; }
+  .size-link { padding:1rem .7rem; }
+  .size-letter { font-size:2rem; }
+  .size-meta { font-size:.68rem; }
+  .hero-stats { gap:1.1rem; padding-top:1.5rem; margin-top:2.5rem; }
+  .hero-stats dt { font-size:1.55rem; }
+  .hero-stats dd { font-size:.6rem; letter-spacing:.06em; }
+  .hero-tag { font-size:.62rem; letter-spacing:.16em; padding:.4rem .8rem; }
+  .cta-inner { padding:2.8rem 1.1rem; }
+  .cont-card { padding:1.4rem; gap:.9rem; }
+  .footer-inner { gap:1rem; }
+}

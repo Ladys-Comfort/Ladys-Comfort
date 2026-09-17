@@ -271,12 +271,14 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
 .nav-backdrop.show { opacity:1; pointer-events:auto; }
 
 @media (max-width:768px) {
-  #navbar, #navbar.scrolled { padding-left:1.2rem; padding-right:1.2rem; }
-  .nav-logo { font-size:1.1rem; }
+  #navbar, #navbar.scrolled { padding-left:1.2rem; padding-right:1.2rem; gap:.5rem; }
+  /* El nombre se acorta si hace falta, pero nunca empuja a las acciones */
+  .nav-logo { font-size:1.1rem; min-width:0; gap:.5rem; }
   .nav-logo .logo-img { width:36px; height:36px; }
+  .nav-actions { flex-shrink:0; gap:.5rem; }
   .menu-toggle { display:flex; }
   .nav-links {
-    position:fixed; top:0; right:0; bottom:0; width:min(80vw,280px);
+    position:fixed; top:0; right:0; bottom:0; width:min(80%,280px);
     background:var(--dark-2); border-left:1px solid var(--border);
     flex-direction:column; align-items:flex-start;
     padding:6rem 2rem 2rem; gap:1.4rem;
@@ -305,7 +307,9 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
 #cart-overlay.active { opacity:1; pointer-events:all; }
 
 #cart-panel {
-  position:fixed; top:0; right:0; bottom:0; width:min(100vw,380px);
+  /* `100%` y no `100vw`: vw incluye el ancho de la barra de scroll y
+     desbordaba por unos pixeles en escritorio. */
+  position:fixed; top:0; right:0; bottom:0; width:min(100%,380px);
   background:var(--dark-2); border-left:1px solid var(--border);
   z-index:700; display:flex; flex-direction:column;
   /* Cerrado se marca `inert` desde JS: eso lo saca del tabulador y del
@@ -468,6 +472,28 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
   #to-top { width:40px; height:40px; bottom:1.1rem; right:4.6rem; }
 }
 
+/* ── Pantallas muy pequeñas (320–380px) ──────────
+   El header es lo primero que se rompe: logo + nombre + tres botones
+   no caben a tamaño normal. Se aprieta todo sin cambiar la estructura. */
+@media (max-width:380px) {
+  #navbar, #navbar.scrolled { padding-left:1rem; padding-right:1rem; }
+  .nav-logo { font-size:.98rem; gap:.45rem; }
+  .nav-logo .logo-img { width:32px; height:32px; }
+  .nav-actions { gap:.35rem; }
+  .theme-toggle { width:34px; height:34px; }
+  .theme-toggle svg { width:16px; height:16px; }
+  .cart-btn { width:36px; height:36px; }
+  .cart-btn svg { width:18px; height:18px; }
+  .menu-toggle { width:30px; }
+
+  .cart-header { padding:1.1rem 1.1rem .9rem; }
+  #cart-body { padding-left:1.1rem; padding-right:1.1rem; }
+  #cart-foot { padding:1rem 1.1rem; }
+  .cart-item-swatch { width:52px; height:64px; }
+  .cart-foot-links { flex-direction:column; align-items:flex-start; gap:.3rem; }
+  .cart-note { text-align:left; }
+}
+
 /* ════════════════════════════════════════════════
    MODALES (compartido)
 ════════════════════════════════════════════════ */
@@ -505,7 +531,7 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
   border-radius:40px; font-size:.88rem; font-weight:500;
   z-index:9999; box-shadow:var(--shadow-2);
   transition:transform .35s var(--ease-out), opacity .35s;
-  opacity:0; max-width:calc(100vw - 2rem); text-align:center;
+  opacity:0; max-width:calc(100% - 2rem); text-align:center;
 }
 .lc-toast.in  { transform:translateX(-50%) translateY(0); opacity:1; }
 .lc-toast.err { border-color:rgba(255,120,60,.45); color:#ff9450; }

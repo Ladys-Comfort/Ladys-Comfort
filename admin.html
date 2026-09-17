@@ -275,11 +275,23 @@
       <!-- Stock por talla -->
       <div class="form-section">
         <p class="fsec-title">Stock por talla</p>
-        <p class="fsec-hint">
+
+        <label class="lc-check check-unica">
+          <input type="checkbox" id="f-is-unica" onchange="toggleTallaUnica()">
+          <span class="check-box">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="2 6 5 9 10 3"/>
+            </svg>
+          </span>
+          <span class="check-label">Talla única</span>
+        </label>
+
+        <p class="fsec-hint" id="hint-tallas">
           La tienda filtra por talla: sólo aparecen las tallas con stock mayor a 0.
           Si todas quedan en 0, el pijama se muestra como <strong>agotado</strong>.
         </p>
-        <div class="sizes-grid">
+
+        <div class="sizes-grid" id="sizes-grid">
           <div class="size-item">
             <label for="f-S">S</label>
             <input type="number" id="f-S" value="0" min="0">
@@ -296,6 +308,11 @@
             <label for="f-XL">XL</label>
             <input type="number" id="f-XL" value="0" min="0">
           </div>
+        </div>
+
+        <div class="fgroup unica-row" id="unica-row" style="display:none">
+          <label for="f-U">Unidades disponibles (talla única)</label>
+          <input type="number" id="f-U" value="0" min="0" placeholder="0">
         </div>
       </div>
 

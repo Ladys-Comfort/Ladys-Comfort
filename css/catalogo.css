@@ -97,7 +97,10 @@
   display:flex; align-items:center; gap:.55rem;
   background:var(--dark-3); border:1px solid var(--border);
   border-radius:40px; padding:.45rem 1rem;
-  min-width:220px; transition:border-color var(--trans), box-shadow var(--trans);
+  /* En escritorio conserva su tamaño; en móvil la media query lo lleva
+     al 100%. `max-width` evita que se salga si el espacio es menor. */
+  min-width:220px; max-width:100%;
+  transition:border-color var(--trans), box-shadow var(--trans);
 }
 .cat-search-box:focus-within { border-color:var(--neon); box-shadow:0 0 0 3px var(--neon-faint); }
 .cat-search-box svg { width:16px; height:16px; color:var(--muted); flex-shrink:0; }
@@ -531,9 +534,11 @@
      apilar el contenedor equivocado dejaba filtros y búsqueda lado a lado. */
   .cat-toolbar-inner { flex-direction:column; align-items:stretch; gap:1.1rem; }
   .toolbar-right { flex-direction:column; align-items:stretch; }
-  .cat-search-box { min-width:0; }
+  /* Buscador y orden al 100% del ancho */
+  .cat-search-box { flex:1 1 auto; width:100%; min-width:0; }
+  .sorter, .sorter select { width:100%; min-width:0; }
   /* Sin esto, un hijo flex no baja de su ancho de contenido y desborda */
-  .filter-group, .toolbar-right, .filter-head { min-width:0; }
+  .filter-group, .toolbar-right, .filter-head, .filter-bar { min-width:0; max-width:100%; }
   /* El desenfoque de la barra fija sobre fotos en scroll provoca
      repintados y parpadeo en GPU móvil: fondo opaco en su lugar. */
   .cat-toolbar {
@@ -542,12 +547,43 @@
   }
   .sorter { justify-content:space-between; }
   .sorter select { flex:1; }
-  .filter-bar { overflow-x:auto; flex-wrap:nowrap; padding-bottom:.3rem; margin:0 -1.2rem; padding-left:1.2rem; padding-right:1.2rem; }
-  .filter-btn { flex-shrink:0; }
-  #products-grid { grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:1rem; }
+  /* Las pastillas fluyen en varias filas. Antes iban en `nowrap` con
+     margenes negativos: el ancho intrinseco (470px) arrastraba a
+     .filter-group fuera del contenedor y se salia del viewport. */
+  .filter-bar { flex-wrap:wrap; gap:.4rem; margin:0; padding:0; overflow:visible; }
+  .filter-btn { flex:0 1 auto; min-width:0; padding:.45rem .8rem; }
+  /* 2 columnas fijas con minmax(0,...): sin el 0 los items no bajan de su
+     ancho de contenido y desbordan la rejilla. */
+  #products-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:1rem; }
   .pcard-body { padding:.8rem .85rem 1rem; }
   .pcard-name { font-size:.92rem; }
   .pcard-quick { display:none; }
   .lc-modal { padding:0; align-items:flex-end; }
   .quick-box, .guide-box { max-width:100%; border-radius:var(--rad-lg) var(--rad-lg) 0 0; max-height:94vh; }
 }
+
+/* Pantallas muy pequeñas: una sola columna */
+@media (max-width:359px) {
+  .cat-hero, .cat-toolbar, .active-filters, .cat-main { padding-left:1rem; padding-right:1rem; }
+  #products-grid { grid-template-columns:1fr; }
+  .filter-btn { padding:.4rem .7rem; font-size:.8rem; min-width:0; }
+  .cat-hero h1 { font-size:1.7rem; }
+  /* La tabla de tallas se lee con scroll interno en vez de estirar la pagina */
+  .guide-table { min-width:0; font-size:.8rem; }
+  .guide-table th, .guide-table td { padding:.55rem .5rem; }
+  .guide-box, .quick-info { padding-left:1.1rem; padding-right:1.1rem; }
+}
+
+/* ── Talla única ──────────────────────────────────
+   La pastilla lleva texto ("Talla única") en vez de una letra, así que
+   necesita ancho propio y ocupa su fila. Va siempre seleccionada porque
+   no hay nada que elegir. */
+.sz-unica {
+  min-width:0; width:auto;
+  padding:.35rem .9rem;
+  letter-spacing:.02em;
+  text-decoration:none;
+}
+.sz-lg.sz-unica { padding:.6rem 1.1rem; }
+
+.filter-btn-unica { min-width:auto; padding-left:.9rem; padding-right:.9rem; }
