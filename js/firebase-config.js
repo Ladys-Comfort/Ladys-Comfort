@@ -21,6 +21,13 @@ const auth = firebase.auth();
 const storage = typeof firebase.storage === "function" ? firebase.storage() : null;
 
 // Caché offline: si se va el internet, el catálogo ya visitado sigue visible.
-db.enablePersistence({ synchronizeTabs: true }).catch(() => {
-  /* varias pestañas abiertas o navegador sin soporte: seguimos online */
-});
+// Va dentro de try/catch además del .catch(): en Safari con navegación
+// privada el acceso a IndexedDB puede lanzar de forma SÍNCRONA, y eso
+// cortaría el resto del script.
+try {
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {
+    /* varias pestañas abiertas o navegador sin soporte: seguimos online */
+  });
+} catch (e) {
+  /* IndexedDB no disponible: la tienda funciona igual, sin caché */
+}

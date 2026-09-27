@@ -40,9 +40,15 @@ function initNavbar() {
   });
 
   // Al pasar a escritorio el menú móvil deja de tener sentido.
-  window.matchMedia("(min-width: 769px)").addEventListener("change", e => {
+  // OJO: MediaQueryList.addEventListener no existe antes de Safari 14.
+  // Llamarlo a secas lanzaba TypeError, cortaba el arranque y la página
+  // se quedaba en blanco en iPhone (ver initReveal más abajo).
+  const mq = window.matchMedia("(min-width: 769px)");
+  const alEnsanchar = e => {
     if (e.matches && navbar.classList.contains("nav-open")) closeNav();
-  });
+  };
+  if (mq.addEventListener) mq.addEventListener("change", alEnsanchar);
+  else if (mq.addListener) mq.addListener(alEnsanchar);
 }
 
 // ── Scroll: navbar compacto + botón volver arriba ──
@@ -73,6 +79,10 @@ function initScrollEffects() {
 
 // ── Animaciones de entrada ────────────────────────
 function initReveal() {
+  // Avisa al CSS de que el JS sí se hizo cargo de revelar el contenido,
+  // para que no salte la red de seguridad por tiempo.
+  document.documentElement.classList.add("reveal-ready");
+
   const items = document.querySelectorAll(".anim");
   if (!items.length) return;
 
@@ -108,8 +118,18 @@ function initReveal() {
 }
 
 // ── Init ──────────────────────────────────────────
+// Cada módulo va aislado: si uno falla, los demás siguen. Antes bastaba
+// una excepción en initNavbar para que initReveal nunca corriera y la
+// página entera quedara invisible.
+// initReveal va PRIMERO porque mostrar el contenido es lo único
+// imprescindible; el menú y el scroll son secundarios.
+function arrancar(nombre, fn) {
+  try { fn(); }
+  catch (e) { console.error("Ladys Comfort · falló " + nombre + ":", e); }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  initNavbar();
-  initScrollEffects();
-  initReveal();
+  arrancar("initReveal", initReveal);
+  arrancar("initNavbar", initNavbar);
+  arrancar("initScrollEffects", initScrollEffects);
 });

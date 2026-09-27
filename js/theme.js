@@ -76,3 +76,15 @@ document.addEventListener("DOMContentLoaded", function () {
   updateThemeIcons();
   updateThemeColorMeta();
 });
+
+// ── Red de seguridad del contenido ────────────────
+// El CSS oculta los elementos .anim y es ui.js quien los revela. Si ui.js
+// falla —o ni siquiera lo parsea un Safari antiguo— la página se queda en
+// blanco. Esto va aquí a propósito: theme.js es ES5, se carga en el <head>
+// y se ejecuta siempre, así que no puede caer por el mismo motivo.
+setTimeout(function () {
+  // Si ui.js hizo su trabajo, no tocamos nada: se conserva la animación.
+  if (document.documentElement.className.indexOf("reveal-ready") !== -1) return;
+  var els = document.querySelectorAll(".anim");
+  for (var i = 0; i < els.length; i++) els[i].className += " visible";
+}, 3000);

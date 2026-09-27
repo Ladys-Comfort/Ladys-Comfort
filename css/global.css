@@ -575,3 +575,9 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
 /* Sólo ocultamos para animar si hay JS que pueda volver a mostrarlo. */
 .js .anim { opacity:0; transform:translateY(20px); transition:opacity .6s ease, transform .6s ease; }
 .js .anim.visible { opacity:1; transform:translateY(0); }
+
+
+/* Ocultar el contenido con JS y revelarlo con JS significa que cualquier
+   fallo del JS deja la página invisible — fue justo lo que pasó en
+   iPhone. La red de seguridad está en theme.js, que es ES5 y siempre se
+   ejecuta: a los 3 s revela todo si nadie más lo hizo. */
