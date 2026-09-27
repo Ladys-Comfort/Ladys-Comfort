@@ -20,14 +20,9 @@ const auth = firebase.auth();
 // En la tienda el SDK no está presente, así que no lo inicializamos.
 const storage = typeof firebase.storage === "function" ? firebase.storage() : null;
 
-// Caché offline: si se va el internet, el catálogo ya visitado sigue visible.
-// Va dentro de try/catch además del .catch(): en Safari con navegación
-// privada el acceso a IndexedDB puede lanzar de forma SÍNCRONA, y eso
-// cortaría el resto del script.
-try {
-  db.enablePersistence({ synchronizeTabs: true }).catch(() => {
-    /* varias pestañas abiertas o navegador sin soporte: seguimos online */
-  });
-} catch (e) {
-  /* IndexedDB no disponible: la tienda funciona igual, sin caché */
-}
+// SIN caché offline a propósito.
+// Se probó `db.enablePersistence()` y en iPhone dejaba la consulta colgada
+// para siempre: la página cargaba pero los productos no aparecían nunca,
+// sin error. Es un problema conocido de IndexedDB en WebKit. En Android
+// funcionaba bien, por eso costó verlo. La caché no compensa perder la
+// tienda en todos los dispositivos Apple.

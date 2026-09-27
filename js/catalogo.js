@@ -48,7 +48,15 @@ const productById  = id => allProducts.find(p => p.id === id);
 async function loadProducts() {
   showSkeleton();
   try {
-    const snap = await db.collection("products").orderBy("createdAt", "desc").get();
+    // Límite de tiempo: si la consulta se cuelga, el cliente veía esqueletos
+    // grises indefinidamente, sin pista de que algo iba mal. Mejor un error
+    // con botón de reintentar.
+    const consulta = db.collection("products").orderBy("createdAt", "desc").get();
+    const snap = await Promise.race([
+      consulta,
+      new Promise((_, rechazar) =>
+        setTimeout(() => rechazar(new Error("La consulta tardó demasiado")), 12000))
+    ]);
     allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFilterCounts();
     render();
