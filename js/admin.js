@@ -64,9 +64,11 @@ async function fetchProducts() {
   try {
     const snap = await db.collection("products").orderBy("createdAt", "desc").get();
     adminProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Los eventos van después de los productos (cuentan cuántos tiene cada uno)
+    // y antes de pintar la lista (para mostrar la etiqueta de cada pijama).
+    await fetchEvents();
     renderAdminList(adminProducts);
-    const c = adminProducts.length;
-    document.getElementById("dash-count").textContent = c + " producto" + (c !== 1 ? "s" : "");
+    updateSubtitle();
   } catch (e) {
     list.innerHTML = `<div class="a-msg error">Error: ${e.message}</div>`;
   }
@@ -123,7 +125,7 @@ function buildRow(p) {
     <div class="a-row-info">
       <div class="a-row-top">
         <h3>${esc(p.name)}</h3>
-        <div class="a-row-badges">${badges}</div>
+        <div class="a-row-badges">${badges}${productEventTags(p)}</div>
       </div>
       <div class="a-row-meta">
         <span class="meta-price">${price}</span>
@@ -155,6 +157,7 @@ function openAdd() {
   editingId = null; newFiles = []; existingUrls = [];
   clearForm();
   document.getElementById("modal-title").textContent = "Agregar pijama";
+  populateEventSelect("");
   showModal();
 }
 
@@ -181,6 +184,7 @@ async function openEdit(id) {
   document.getElementById("f-is-unica").checked = esTallaUnica(p);
   document.getElementById("f-U").value = p.sizes?.[SIZE_UNICA] ?? 0;
   toggleTallaUnica();
+  populateEventSelect(p.eventId || "");
   renderPreviews();
   showModal();
 }
@@ -393,6 +397,7 @@ async function saveProduct() {
       isFeatured:  document.getElementById("f-is-feat").checked,
       isNew:       document.getElementById("f-is-new").checked,
       sizes,
+      eventId:     document.getElementById("f-event").value || null,
       images:      allImages,
       updatedAt:   firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -416,9 +421,13 @@ async function saveProduct() {
 }
 
 // ── Eliminar ──────────────────────────────────────
-let pendingDeleteId = null;
+let pendingDeleteId   = null;
+let pendingDeleteKind = "product";      // "product" | "event" (ver admin-events.js)
 function askDelete(id) {
-  pendingDeleteId = id;
+  pendingDeleteId   = id;
+  pendingDeleteKind = "product";
+  document.getElementById("del-title").textContent = "¿Eliminar producto?";
+  document.getElementById("del-extra").textContent = "Esta acción no se puede deshacer.";
   const p = adminProducts.find(x => x.id === id);
   document.getElementById("del-name").textContent = p?.name || "este producto";
   const m = document.getElementById("del-modal");
@@ -437,6 +446,7 @@ function closeDelModal() {
 }
 async function confirmDelete() {
   if (!pendingDeleteId) return;
+  if (pendingDeleteKind === "event") return confirmDeleteEvent();
   try {
     await db.collection("products").doc(pendingDeleteId).delete();
     adminToast("Producto eliminado");

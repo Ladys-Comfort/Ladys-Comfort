@@ -599,3 +599,86 @@ html, body { height:100%; }
   color:var(--neon);
 }
 .a-pill-unica b { color:var(--neon); }
+
+/* ── Eventos y colecciones de temporada ───────────
+   Cada evento trae su color en --ev (de la paleta cerrada de js/events.js). */
+.admin-view { display:flex; flex-direction:column; flex:1; min-width:0; }
+.view-hint { font-size:.85rem; color:var(--muted); line-height:1.6; max-width:720px; }
+.view-hint strong { color:var(--text); font-weight:600; }
+
+.field-note { font-size:.76rem; color:var(--muted); margin-top:.45rem; line-height:1.5; }
+.field-note:empty { display:none; }
+.muted-inline { display:block; color:var(--muted); font-size:.74rem; font-weight:400; margin-top:.1rem; }
+.fsec-hint.is-error { color:#d33; border-left-color:#d33; background:rgba(255,107,107,.08); }
+.fsec-hint:empty { display:none; }
+
+/* Calendario del navegador con el tema del panel */
+[data-theme="dark"]  input[type="datetime-local"] { color-scheme:dark; }
+[data-theme="light"] input[type="datetime-local"] { color-scheme:light; }
+
+/* Fila de evento */
+.a-row-event { border-left:3px solid var(--ev); }
+.a-ev-emoji {
+  width:52px; height:52px; border-radius:50%; flex-shrink:0;
+  display:grid; place-items:center; font-size:1.6rem; line-height:1;
+  background:color-mix(in srgb, var(--ev) 18%, var(--dark-3));
+  border:1px solid color-mix(in srgb, var(--ev) 55%, transparent);
+}
+.a-ev-warn { color:#e07b1a; font-weight:600; }
+[data-theme="dark"] .a-ev-warn { color:#ffb347; }
+
+.tag-ev-activo     { background:rgba(61,220,132,.14); color:#1f9d5c; }
+.tag-ev-programado { background:rgba(77,166,255,.14); color:#1d6fd1; }
+.tag-ev-finalizado { background:var(--dark-4);        color:var(--muted); }
+.tag-ev-pausado    { background:rgba(255,180,40,.14); color:#b57500; }
+[data-theme="dark"] .tag-ev-activo     { color:#3ddc84; }
+[data-theme="dark"] .tag-ev-programado { color:#4da6ff; }
+[data-theme="dark"] .tag-ev-pausado    { color:#ffc850; }
+
+/* Etiqueta del evento en la fila de un pijama */
+.atag.tag-ev {
+  background:color-mix(in srgb, var(--ev) 18%, transparent);
+  color:var(--text);
+  border:1px solid color-mix(in srgb, var(--ev) 45%, transparent);
+}
+
+/* Selector de color */
+.ev-colors { display:flex; gap:.5rem; flex-wrap:wrap; padding-top:.35rem; }
+.ev-swatch {
+  width:30px; height:30px; border-radius:50%;
+  background:var(--sw); border:2px solid transparent;
+  box-shadow:0 0 0 1px var(--border);
+  transition:transform var(--trans), box-shadow var(--trans);
+}
+.ev-swatch:hover { transform:scale(1.1); }
+.ev-swatch.on { border-color:var(--dark-2); box-shadow:0 0 0 2px var(--text); transform:scale(1.1); }
+
+/* Lista de pijamas del evento */
+.ev-prod-search { max-width:none; margin-bottom:.6rem; }
+.ev-prod-list {
+  max-height:260px; overflow-y:auto; overscroll-behavior:contain;
+  border:1px solid var(--border); border-radius:var(--rad); background:var(--dark-3);
+}
+.ev-prod {
+  display:flex; align-items:center; flex-wrap:wrap; gap:.4rem .7rem;
+  padding:.55rem .8rem; cursor:pointer;
+  border-bottom:1px solid var(--border);
+  transition:background var(--trans);
+}
+.ev-prod:last-child { border-bottom:none; }
+.ev-prod:hover { background:var(--neon-faint); }
+.ev-prod input { accent-color:var(--neon); width:16px; height:16px; flex-shrink:0; }
+.ev-prod img, .ev-prod-noimg {
+  width:34px; height:42px; flex-shrink:0;
+  object-fit:contain; border-radius:6px;
+  background:var(--img-bed); border:1px solid var(--border);
+}
+.ev-prod-name { font-size:.88rem; flex:1; min-width:0; overflow-wrap:anywhere; }
+.ev-prod-other { flex-basis:100%; padding-left:3.4rem; font-size:.72rem; color:#e07b1a; }
+[data-theme="dark"] .ev-prod-other { color:#ffb347; }
+.ev-prod-empty { padding:1rem; font-size:.85rem; color:var(--muted); text-align:center; }
+
+@media (max-width:600px) {
+  .a-row-event { flex-wrap:wrap; }
+  .a-ev-emoji { width:44px; height:44px; font-size:1.35rem; }
+}

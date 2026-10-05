@@ -587,3 +587,87 @@
 .sz-lg.sz-unica { padding:.6rem 1.1rem; }
 
 .filter-btn-unica { min-width:auto; padding-left:.9rem; padding-right:.9rem; }
+
+/* ── Colecciones de temporada ─────────────────────
+   Cada evento trae su color en --ev / --ev-ink (de una paleta cerrada,
+   ver js/events.js). El color se usa en bordes, brillo y el botón; el
+   texto principal conserva los tonos de la marca para no perder contraste
+   en ninguno de los dos temas. */
+.event-banners {
+  max-width:var(--maxw); margin:0 auto;
+  padding:1.6rem 2.5rem 0;
+  display:flex; flex-direction:column; gap:.8rem;
+}
+.event-banners:empty { display:none; }
+
+.event-card {
+  position:relative; overflow:hidden;
+  display:grid; align-items:center; gap:.4rem 1.2rem;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  width:100%; text-align:left;
+  padding:1.1rem 1.4rem;
+  background:var(--dark-2);
+  border:1px solid color-mix(in srgb, var(--ev) 45%, var(--border));
+  border-radius:var(--rad-lg);
+  box-shadow:var(--shadow-1);
+  transition:transform var(--trans), box-shadow var(--trans), border-color var(--trans);
+}
+/* Brillo del color del evento, en una capa propia (sin filter: blur) */
+.event-card::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse at 0% 50%, color-mix(in srgb, var(--ev) 22%, transparent), transparent 62%);
+}
+.event-card > * { position:relative; }
+
+@media (hover:hover) and (pointer:fine) {
+  .event-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-2); border-color:var(--ev); }
+}
+.event-card.on { border-color:var(--ev); box-shadow:0 0 0 1px var(--ev), var(--shadow-1); }
+
+.event-emoji {
+  width:54px; height:54px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:1.7rem; line-height:1;
+  background:color-mix(in srgb, var(--ev) 18%, var(--dark-3));
+  border:1px solid color-mix(in srgb, var(--ev) 50%, transparent);
+}
+.event-info { display:flex; flex-direction:column; min-width:0; }
+.event-kicker {
+  font-size:.66rem; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted);
+}
+.event-name {
+  font-family:var(--disp); font-size:1.25rem; font-weight:700;
+  color:var(--white); line-height:1.2;
+}
+.event-tagline { font-size:.85rem; color:var(--muted); margin-top:.15rem; }
+.event-meta {
+  display:flex; flex-direction:column; align-items:flex-end;
+  font-size:.76rem; color:var(--muted); white-space:nowrap; gap:.1rem;
+}
+.event-meta span:first-child { color:var(--text); font-weight:600; }
+.event-cta {
+  padding:.55rem 1.1rem; border-radius:40px;
+  background:var(--ev); color:var(--ev-ink);
+  font-size:.82rem; font-weight:700; white-space:nowrap;
+}
+
+/* Etiqueta sobre la foto del pijama */
+.badge.b-event {
+  color:var(--ev-ink); background:var(--ev);
+  border-color:transparent;
+}
+
+@media (max-width:768px) {
+  .event-banners { padding:1.2rem 1.2rem 0; }
+  .event-card {
+    grid-template-columns:auto minmax(0,1fr);
+    padding:1rem;
+  }
+  .event-emoji { width:46px; height:46px; font-size:1.4rem; }
+  .event-meta { grid-column:1 / -1; flex-direction:row; justify-content:space-between; align-items:center; }
+  .event-cta  { grid-column:1 / -1; text-align:center; }
+}
+@media (max-width:359px) {
+  .event-banners { padding-left:1rem; padding-right:1rem; }
+}

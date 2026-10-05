@@ -74,7 +74,7 @@
       <span>Ladys Comfort</span>
     </div>
     <nav class="sid-nav">
-      <a href="#" class="sid-link active">
+      <a href="#" class="sid-link active" id="nav-productos" onclick="showView('productos');return false;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <rect x="3" y="3" width="7" height="7" rx="1"/>
           <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -82,6 +82,14 @@
           <rect x="14" y="14" width="7" height="7" rx="1"/>
         </svg>
         Productos
+      </a>
+      <a href="#" class="sid-link" id="nav-eventos" onclick="showView('eventos');return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Eventos
       </a>
       <a href="catalogo.html" class="sid-link" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -118,7 +126,7 @@
           </svg>
         </button>
         <div>
-          <h1 class="admin-title">Productos</h1>
+          <h1 class="admin-title" id="admin-title">Productos</h1>
           <p class="admin-subtitle" id="dash-count">Cargando...</p>
         </div>
       </div>
@@ -135,15 +143,25 @@
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
         </button>
-        <button class="btn-add-prod" type="button" onclick="openAdd()">
+        <button class="btn-add-prod" id="btn-add-prod" type="button" onclick="openAdd()">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <line x1="10" y1="4" x2="10" y2="16"/>
             <line x1="4" y1="10" x2="16" y2="10"/>
           </svg>
           Agregar pijama
         </button>
+        <button class="btn-add-prod" id="btn-add-event" type="button" onclick="openEventAdd()" style="display:none">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="10" y1="4" x2="10" y2="16"/>
+            <line x1="4" y1="10" x2="16" y2="10"/>
+          </svg>
+          Nuevo evento
+        </button>
       </div>
     </div>
+
+    <!-- VISTA: PRODUCTOS -->
+    <div class="admin-view" id="view-productos">
 
     <!-- Toolbar -->
     <div class="admin-toolbar">
@@ -162,6 +180,24 @@
         <div class="a-loading">
           <div class="spinner"></div>
           <p>Cargando productos...</p>
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- VISTA: EVENTOS -->
+    <div class="admin-view" id="view-eventos" style="display:none">
+      <div class="admin-toolbar">
+        <p class="view-hint">
+          Crea una <strong>colección de temporada</strong> o una <strong>colaboración</strong>
+          con fecha de inicio y fin. Empieza y termina sola: no hay que acordarse de
+          encenderla ni apagarla.
+        </p>
+      </div>
+      <div class="admin-content">
+        <div id="event-list">
+          <div class="a-loading"><div class="spinner"></div><p>Cargando eventos...</p></div>
         </div>
       </div>
     </div>
@@ -212,6 +248,13 @@
           <div class="fgroup field-full">
             <label for="f-desc">Descripción</label>
             <textarea id="f-desc" placeholder="Tela, estampado, características especiales..."></textarea>
+          </div>
+          <div class="fgroup field-full">
+            <label for="f-event">Colección o evento de temporada</label>
+            <select id="f-event">
+              <option value="">Ninguno (pijama del catálogo normal)</option>
+            </select>
+            <p class="field-note" id="f-event-note"></p>
           </div>
         </div>
       </div>
@@ -331,6 +374,102 @@
 <!-- ════════════════════════════════════════════════
      MODAL — CONFIRMAR ELIMINAR
 ════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════
+     MODAL — CREAR / EDITAR EVENTO
+════════════════════════════════════════════════ -->
+<div id="event-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="event-modal-title">Nuevo evento</h2>
+      <button class="modal-close-btn" type="button" onclick="closeEventModal()" aria-label="Cerrar">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 5L5 15M5 5l10 10"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="form-section">
+        <p class="fsec-title">Información</p>
+        <div class="fields-grid">
+          <div class="fgroup field-full">
+            <label for="ev-name">Nombre <span style="color:var(--neon)">*</span></label>
+            <input type="text" id="ev-name" maxlength="40" placeholder="Ej: Halloween, Navidad, Colab con Sofi">
+          </div>
+          <div class="fgroup">
+            <label for="ev-emoji">Emoji</label>
+            <input type="text" id="ev-emoji" maxlength="8" placeholder="&#127875;">
+          </div>
+          <div class="fgroup">
+            <label>Color</label>
+            <div class="ev-colors" id="ev-colors" role="group" aria-label="Color del evento"></div>
+          </div>
+          <div class="fgroup field-full">
+            <label for="ev-tagline">Frase corta (opcional)</label>
+            <input type="text" id="ev-tagline" maxlength="80" placeholder="Ej: Pijamas para una noche de miedo">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <p class="fsec-title">Fechas</p>
+        <div class="fields-grid">
+          <div class="fgroup">
+            <label for="ev-start">Empieza <span style="color:var(--neon)">*</span></label>
+            <input type="datetime-local" id="ev-start" oninput="updateEventHint()">
+          </div>
+          <div class="fgroup">
+            <label for="ev-end">Termina <span style="color:var(--neon)">*</span></label>
+            <input type="datetime-local" id="ev-end" oninput="updateEventHint()">
+          </div>
+        </div>
+        <p class="fsec-hint" id="ev-status-hint"></p>
+      </div>
+
+      <div class="form-section">
+        <p class="fsec-title">Visibilidad</p>
+        <label class="lc-check">
+          <input type="checkbox" id="ev-enabled" checked onchange="updateEventHint()">
+          <span class="check-box">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>
+          </span>
+          <span class="check-label">Publicado <small class="muted-inline">(desmárcalo para dejarlo en borrador)</small></span>
+        </label>
+        <label class="lc-check" style="margin-top:.7rem">
+          <input type="checkbox" id="ev-only" checked>
+          <span class="check-box">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>
+          </span>
+          <span class="check-label">Mostrar sus pijamas sólo mientras dure
+            <small class="muted-inline">(antes de empezar y después de terminar no aparecen en la tienda)</small></span>
+        </label>
+      </div>
+
+      <div class="form-section">
+        <p class="fsec-title">Pijamas de este evento</p>
+        <div class="search-box ev-prod-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="ev-prod-search" placeholder="Buscar pijama..." oninput="filterEventProducts()">
+        </div>
+        <div class="ev-prod-list" id="ev-prod-list"></div>
+        <p class="fsec-hint" id="ev-prod-count"></p>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-cancel" type="button" onclick="closeEventModal()">Cancelar</button>
+      <button class="btn-save" type="button" id="event-save-btn" onclick="saveEvent()">
+        <span class="btn-text">Guardar</span>
+        <span class="inline-spin" id="event-save-loader"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="del-modal" class="modal-overlay">
   <div class="del-modal-box">
     <div class="del-icon">
@@ -341,10 +480,10 @@
         <path d="M9 6V4h6v2"/>
       </svg>
     </div>
-    <h3>¿Eliminar producto?</h3>
+    <h3 id="del-title">¿Eliminar producto?</h3>
     <p>Vas a eliminar permanentemente</p>
     <p class="del-pname" id="del-name"></p>
-    <p>Esta acción no se puede deshacer.</p>
+    <p id="del-extra">Esta acción no se puede deshacer.</p>
     <div class="del-actions">
       <button class="btn-del-cancel" onclick="closeDelModal()">Cancelar</button>
       <button class="btn-del-confirm" onclick="confirmDelete()">Sí, eliminar</button>
@@ -358,7 +497,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="js/firebase-config.js"></script>
+<script src="js/events.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/admin-events.js"></script>
 
 <script>
 function toggleSidebar() {

@@ -32,7 +32,10 @@ let galleryIdx  = 0;
 // cambio de filtro se percibe como parpadeo de todas las fotos.
 let primerRender = true;
 
-let state = { size: "todas", q: "", sort: "nuevo" };
+// Eventos y colaboraciones de temporada (ver js/events.js).
+let eventCtx = { loaded: false, list: [], byId: {} };
+
+let state = { size: "todas", q: "", sort: "nuevo", evento: "" };
 
 // ── Helpers de producto ───────────────────────────
 const stockOf      = (p, s) => Number(p?.sizes?.[s]) || 0;
@@ -44,6 +47,13 @@ const finalPrice   = p => (p.isOffer && p.offerPrice ? p.offerPrice : p.price) |
 const swatchOf     = p => COLOR_MAP[p.color?.toLowerCase()] || "#b0849a";
 const productById  = id => allProducts.find(p => p.id === id);
 
+/** Eventos en curso que tienen al menos un pijama visible. */
+function activeEvents() {
+  return eventCtx.list.filter(ev =>
+    eventStatus(ev) === "activo" && allProducts.some(p => p.eventId === ev.id));
+}
+const eventOf = p => (p.eventId ? eventCtx.byId[p.eventId] : null);
+
 // ── Carga ─────────────────────────────────────────
 async function loadProducts() {
   showSkeleton();
@@ -52,12 +62,27 @@ async function loadProducts() {
     // grises indefinidamente, sin pista de que algo iba mal. Mejor un error
     // con botón de reintentar.
     const consulta = db.collection("products").orderBy("createdAt", "desc").get();
-    const snap = await Promise.race([
-      consulta,
-      new Promise((_, rechazar) =>
-        setTimeout(() => rechazar(new Error("La consulta tardó demasiado")), 12000))
+    // Los eventos se piden a la vez. loadEvents() nunca lanza: si fallan, la
+    // tienda sigue funcionando sin ellos.
+    const [snap, eventos] = await Promise.all([
+      Promise.race([
+        consulta,
+        new Promise((_, rechazar) =>
+          setTimeout(() => rechazar(new Error("La consulta tardó demasiado")), 12000))
+      ]),
+      loadEvents()
     ]);
-    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    eventCtx = eventos;
+
+    // Un pijama de un evento que aún no empieza (o ya terminó) no se muestra.
+    allProducts = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => isProductVisible(p, eventCtx));
+
+    // Un enlace a un evento que no está activo no debe dejar el catálogo vacío.
+    if (state.evento && !activeEvents().some(e => e.id === state.evento)) state.evento = "";
+
+    renderEventBanners();
     renderFilterCounts();
     render();
   } catch (e) {
@@ -80,6 +105,10 @@ function visibleProducts() {
 
   if (state.size !== "todas") {
     list = list.filter(p => stockOf(p, state.size) > 0);
+  }
+
+  if (state.evento) {
+    list = list.filter(p => p.eventId === state.evento);
   }
 
   if (state.q) {
@@ -129,6 +158,8 @@ function render() {
 
 /** Explica el resultado vacío según lo que el usuario realmente filtró. */
 function emptyMessage() {
+  if (state.evento && state.size === "todas" && !state.q)
+    return "Esta colección todavía no tiene pijamas disponibles";
   const talla = state.size === "U" ? "talla única" : "talla " + esc(state.size);
   if (state.q && state.size !== "todas")
     return `No encontramos “${esc(state.q)}” en ${talla}`;
@@ -158,7 +189,15 @@ function buildCard(p, index = 0) {
     ? Math.round((1 - p.offerPrice / p.price) * 100)
     : 0;
 
+  // Etiqueta del evento (sólo si está en curso: una colección terminada que
+  // se deja visible vuelve a ser un pijama normal).
+  const ev = eventOf(p);
+  const evBadge = ev && eventStatus(ev) === "activo"
+    ? `<span class="badge b-event" style="${eventStyle(ev)}">${esc(ev.emoji || "✦")} ${esc(ev.name)}</span>`
+    : "";
+
   const badges = [
+    evBadge,
     p.isNew      ? `<span class="badge b-new">Nuevo</span>` : "",
     discount > 0 ? `<span class="badge b-offer">−${discount}%</span>` : "",
     p.isFeatured ? `<span class="badge b-feat">✦ Destacado</span>` : ""
@@ -480,12 +519,13 @@ function setSearch(value) {
 }
 
 function resetFilters() {
-  state = { size: "todas", q: "", sort: "nuevo" };
+  state = { size: "todas", q: "", sort: "nuevo", evento: "" };
   const input = document.getElementById("cat-search");
   if (input) input.value = "";
   document.getElementById("search-clear")?.classList.remove("show");
   const sel = document.getElementById("sorter-sel");
   if (sel) sel.value = "nuevo";
+  renderEventBanners();
   setSizeFilter("todas");
 }
 
@@ -518,6 +558,12 @@ function buildActiveChips() {
       ${state.size === "U" ? "Talla única" : "Talla " + esc(state.size)} <span aria-hidden="true">×</span>
       <span class="sr-only">Quitar filtro de talla</span></button>`);
   }
+  if (state.evento && eventCtx.byId[state.evento]) {
+    const ev = eventCtx.byId[state.evento];
+    chips.push(`<button type="button" class="achip" onclick="setEvento('')">
+      ${esc(ev.emoji || "✦")} ${esc(ev.name)} <span aria-hidden="true">×</span>
+      <span class="sr-only">Quitar filtro de colección</span></button>`);
+  }
   if (state.q) {
     chips.push(`<button type="button" class="achip" onclick="clearSearch()">
       “${esc(state.q)}” <span aria-hidden="true">×</span>
@@ -529,11 +575,49 @@ function buildActiveChips() {
   return chips.join("");
 }
 
+// ── Colecciones de temporada ──────────────────────
+/** Elige (o quita, con "") el filtro de colección. Pulsar la misma lo quita. */
+function setEvento(slug) {
+  state.evento = state.evento === slug ? "" : slug;
+  renderEventBanners();
+  render();
+}
+
+/** Tarjetas de las colecciones en curso, encima de los filtros. */
+function renderEventBanners() {
+  const cont = document.getElementById("event-banners");
+  if (!cont) return;
+  const lista = activeEvents();
+  if (!lista.length) { cont.innerHTML = ""; return; }
+
+  cont.innerHTML = lista.map(ev => {
+    const n   = allProducts.filter(p => p.eventId === ev.id).length;
+    const on  = state.evento === ev.id;
+    const fin = eventEndLabel(ev);
+    return `
+    <button type="button" class="event-card${on ? " on" : ""}" style="${eventStyle(ev)}"
+            aria-pressed="${on}" onclick="setEvento('${escJs(ev.id)}')">
+      <span class="event-emoji" aria-hidden="true">${esc(ev.emoji || "✦")}</span>
+      <span class="event-info">
+        <span class="event-kicker">Colección de temporada</span>
+        <strong class="event-name">${esc(ev.name)}</strong>
+        ${ev.tagline ? `<span class="event-tagline">${esc(ev.tagline)}</span>` : ""}
+      </span>
+      <span class="event-meta">
+        <span>${esc(fin)}</span>
+        <span>${n} ${n === 1 ? "pijama" : "pijamas"}</span>
+      </span>
+      <span class="event-cta">${on ? "Viendo esta colección ✕" : "Ver colección →"}</span>
+    </button>`;
+  }).join("");
+}
+
 // ── Estado en la URL (para compartir/volver) ──────
 function syncUrl() {
   const params = new URLSearchParams();
   if (state.size !== "todas") params.set("talla", state.size);
   if (state.q)               params.set("q", state.q);
+  if (state.evento)          params.set("evento", state.evento);
   if (state.sort !== "nuevo") params.set("orden", state.sort);
   const qs = params.toString();
   history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
@@ -545,6 +629,7 @@ function readUrl() {
   if (talla === "UNICA" || talla === "ÚNICA") talla = "U";
   if (SIZES.includes(talla)) state.size = talla;
   state.q = params.get("q") || "";
+  state.evento = params.get("evento") || "";
   const orden = params.get("orden");
   if (["precio-asc", "precio-desc", "nombre"].includes(orden)) state.sort = orden;
 
