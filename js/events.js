@@ -172,16 +172,18 @@ const eventImages = ev =>
     .filter(u => typeof u === "string" && /^https?:\/\//i.test(u));
 
 /**
- * Lo que acompaña al nombre en etiquetas pequeñas. El emoji es sólo de las
- * colecciones de temporada; una colaboración se identifica por su foto.
+ * Lo que acompaña al nombre en etiquetas pequeñas. Si el evento tiene foto (o es
+ * una colaboración) no se usa emoji: el emoji queda sólo para las colecciones de
+ * temporada que no tienen foto.
  */
-const eventGlyph = ev => (eventKind(ev) === "colaboracion" ? "✦" : (ev.emoji || "✦"));
+const eventGlyph = ev =>
+  (eventKind(ev) === "colaboracion" || eventImages(ev).length ? "✦" : (ev.emoji || "✦"));
 
-/** Contenido del círculo de las tarjetas: la portada en colaboraciones, el emoji en temporadas. */
+/** Contenido del círculo de las tarjetas: la portada si hay; si no, el emoji (sólo temporadas). */
 function eventIconHTML(ev) {
-  if (eventKind(ev) !== "colaboracion") return esc(ev.emoji || "✦");
   const foto = eventImages(ev)[0];
-  return foto ? `<img src="${esc(foto)}" alt="" loading="lazy" decoding="async">` : "✦";
+  if (foto) return `<img src="${esc(foto)}" alt="" loading="lazy" decoding="async">`;
+  return eventKind(ev) === "colaboracion" ? "✦" : esc(ev.emoji || "✦");
 }
 
 const eventHref = ev => "colaboracion.html?c=" + encodeURIComponent(ev.id);

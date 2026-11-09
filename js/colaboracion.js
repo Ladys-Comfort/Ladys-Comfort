@@ -33,6 +33,7 @@ function noteHTML(emoji, titulo, texto, boton, href) {
 /** Sólo el aviso: se esconde todo lo demás. */
 function showOnlyNote(html) {
   $c("chero").hidden = true;
+  $c("colab-topline").hidden = true;
   $c("cabout").hidden = true;
   ["cpieces-head", "colab-toolbar", "colab-main"].forEach(id => { $c(id).hidden = true; });
   document.getElementById("active-filters").hidden = true;
@@ -114,6 +115,13 @@ window.onCatalogReady = function (ctx) {
   // allProducts ya viene filtrado: aquí sólo quedan las que se pueden ver.
   const piezas = allProducts.filter(p => p.eventId === ev.id);
   const hayPiezas = piezas.length > 0;
+
+  // ── Franja de color (como la de W Merch) ──
+  const top = $c("colab-topline");
+  top.innerHTML = `<span>${esc(ev.name)}</span>
+    <span>${eventKind(ev) === "colaboracion" ? "Ladys Comfort" + (ev.partner ? " / " + esc(ev.partner) : "") : esc(eventKindLabel(ev))}</span>
+    <span>Medellín, CO</span>`;
+  top.hidden = false;
 
   // ── Portada ──
   const hero = $c("chero");

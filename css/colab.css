@@ -155,6 +155,18 @@
    PÁGINA DE LA COLABORACIÓN
 ════════════════════════════════════════════════ */
 .colab-page { padding-top:76px; min-height:100vh; }
+/* Franja delgada del color del evento, como la de W Merch. */
+.colab-topline {
+  height:30px; padding:0 4.4vw; display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  background:var(--ev); color:var(--ev-ink);
+  font-size:.62rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
+}
+.colab-topline[hidden] { display:none; }
+.colab-topline span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:720px) {
+  .colab-topline { padding:0 1.2rem; font-size:.58rem; letter-spacing:.16em; }
+  .colab-topline span:nth-child(2) { display:none; }
+}
 .chero { margin:0; padding:0; }
 .chero .spot { min-height:min(780px, calc(100vh - 76px)); }
 .chero-skel {
