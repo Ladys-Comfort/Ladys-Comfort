@@ -9,6 +9,10 @@ let adminEvents    = { list: [], byId: {}, error: null };
 let editingEventId = null;
 let evColor        = "rosa";
 let currentView    = "productos";
+// Fotos del carrusel del evento, en orden: o ya guardadas ({url}) o nuevas
+// por subir ({file, preview}).
+let evPhotos       = [];
+const MAX_EV_PHOTOS = 8;
 
 const EVENT_STATUS_LABEL = {
   activo: "En curso", programado: "Programado", finalizado: "Finalizado", pausado: "Borrador"
@@ -79,7 +83,7 @@ function renderEventList() {
   if (!adminEvents.list.length) {
     el.innerHTML = `<div class="a-msg">
       Aún no hay eventos. Crea el primero con <strong>Nuevo evento</strong>:
-      Halloween, Navidad, una colaboración…</div>`;
+      Halloween, Navidad, una colaboración con alguien…</div>`;
     return;
   }
   el.innerHTML = adminEvents.list.map(buildEventRow).join("");
@@ -102,13 +106,20 @@ function buildEventRow(ev) {
                : st === "programado" ? startsInLabel(ev) : "";
   const ocultos = st !== "activo" && ev.onlyDuring !== false && n > 0;
 
+  const portada = eventImages(ev)[0];
+  const colab   = eventKind(ev) === "colaboracion";
+  const badges  = `<span class="atag tag-ev-${st}">${EVENT_STATUS_LABEL[st]}</span>`
+    + (colab ? `<span class="atag tag-ev-kind">Colaboración</span>` : "")
+    + (ev.featured ? `<span class="atag tag-ev-feat" title="Se muestra en grande en el inicio mientras esté en curso">★ En el inicio</span>` : "");
+
   return `
   <div class="a-row a-row-event" style="${eventStyle(ev)}" data-id="${esc(ev.id)}">
-    <div class="a-ev-emoji" aria-hidden="true">${esc(ev.emoji || "✦")}</div>
+    <div class="a-ev-emoji${portada ? " has-photo" : ""}" aria-hidden="true">${
+      portada ? `<img src="${esc(portada)}" alt="" loading="lazy">` : esc(eventGlyph(ev))}</div>
     <div class="a-row-info">
       <div class="a-row-top">
-        <h3>${esc(ev.name)}</h3>
-        <div class="a-row-badges"><span class="atag tag-ev-${st}">${EVENT_STATUS_LABEL[st]}</span></div>
+        <h3>${esc(ev.name)}${ev.partner ? ` <small class="a-ev-with">· ${esc(ev.partner)}</small>` : ""}</h3>
+        <div class="a-row-badges">${badges}</div>
       </div>
       <div class="a-row-meta">
         <span>${esc(eventDateRange(ev))}</span>
@@ -119,6 +130,11 @@ function buildEventRow(ev) {
       </div>
     </div>
     <div class="a-row-actions">
+      <a class="btn-edit-row" href="${esc(eventHref(ev))}" target="_blank" rel="noopener"
+         title="Abrir la página del evento en una pestaña nueva">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 4H4v12h12v-4M11 3h6v6M17 3l-8 8"/></svg>
+        Ver página
+      </a>
       <button class="btn-edit-row" type="button" onclick="openEventEdit('${id}')">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14.7 3.3a1 1 0 011.4 1.4L6 14.8l-3.5.9.9-3.5L14.7 3.3z"/></svg>
         Editar
@@ -137,7 +153,7 @@ function productEventTags(p) {
   if (!p.eventId) return "";
   const ev = adminEvents.byId[p.eventId];
   if (!ev) return "";
-  const chip = `<span class="atag tag-ev" style="${eventStyle(ev)}">${esc(ev.emoji || "✦")} ${esc(ev.name)}</span>`;
+  const chip = `<span class="atag tag-ev" style="${eventStyle(ev)}">${esc(eventGlyph(ev))} ${esc(ev.name)}</span>`;
   const visible = isProductVisible(p, { loaded: true, byId: adminEvents.byId });
   return chip + (visible ? ""
     : `<span class="atag tag-out" title="El evento no está en curso: este pijama no se ve en la tienda">Oculto</span>`);
@@ -148,7 +164,7 @@ function populateEventSelect(selectedId) {
   const sel = document.getElementById("f-event");
   if (!sel) return;
   const opciones = adminEvents.list.map(ev =>
-    `<option value="${esc(ev.id)}">${esc(ev.emoji || "✦")} ${esc(ev.name)} · ${EVENT_STATUS_LABEL[eventStatus(ev)]}</option>`);
+    `<option value="${esc(ev.id)}">${esc(eventGlyph(ev))} ${esc(ev.name)} · ${EVENT_STATUS_LABEL[eventStatus(ev)]}</option>`);
   sel.innerHTML = `<option value="">Ninguno (pijama del catálogo normal)</option>` + opciones.join("");
   // Si el pijama apunta a un evento que no se pudo cargar, se conserva la
   // opción para que guardar el producto no le borre el evento sin querer.
@@ -200,8 +216,13 @@ function renderEventColors() {
     `<button type="button" class="ev-swatch${k === evColor ? " on" : ""}" style="--sw:${c.hex}"
              aria-pressed="${k === evColor}" aria-label="${esc(c.label)}" title="${esc(c.label)}"
              onclick="pickEventColor('${k}')"></button>`).join("");
+  const libre = isHexColor(evColor);
+  const input = document.getElementById("ev-color-custom");
+  input.value = libre ? evColor : eventColor(evColor).hex;
+  input.closest(".ev-custom-color").classList.toggle("on", libre);
 }
 function pickEventColor(k) { evColor = k; renderEventColors(); }
+function pickCustomEventColor(hex) { evColor = hex.toLowerCase(); renderEventColors(); }
 
 function renderEventProducts(seleccionados) {
   const lista = [...adminProducts].sort((a, b) => (a.name || "").localeCompare(b.name || "", "es"));
@@ -261,20 +282,175 @@ function updateEventHint() {
   else                          el.textContent = "Quedaría en curso desde ahora. " + eventEndLabel(prueba) + ".";
 }
 
+/** Valor del tipo elegido en el formulario. */
+const eventKindValue = () =>
+  document.getElementById("ev-kind-colab").checked ? "colaboracion" : "temporada";
+
+/** Ajusta el formulario al tipo: "Con quién" y los textos sólo van en colaboraciones. */
+function updateEventKind() {
+  const colab = eventKindValue() === "colaboracion";
+  document.getElementById("ev-partner-group").style.display = colab ? "" : "none";
+  // El emoji es de las colecciones de temporada; una colaboración se identifica por su foto.
+  document.getElementById("ev-emoji-group").style.display = colab ? "none" : "";
+  document.getElementById("ev-cta").placeholder = colab ? "Ver la colaboración" : "Ver la colección";
+  document.getElementById("ev-photos-title").innerHTML = colab
+    ? `Foto de portada y carrusel <span class="req">*</span>`
+    : `Fotos del carrusel <span class="opt">(opcional)</span>`;
+  document.getElementById("ev-photos-hint-colab").style.display = colab ? "" : "none";
+}
+
+/** Muestra u oculta el texto del botón y avisa si ya hay otro evento destacado. */
+function updateEventFeatured() {
+  const on = document.getElementById("ev-featured").checked;
+  document.getElementById("ev-cta-row").style.display = on ? "" : "none";
+  const hint = document.getElementById("ev-featured-hint");
+  if (!on) { hint.textContent = ""; return; }
+  const otro = adminEvents.list.find(e =>
+    e.id !== editingEventId && e.featured === true && eventStatus(e) === "activo");
+  hint.textContent = otro
+    ? "Ya hay otro evento destacado en curso (“" + otro.name + "”). En el inicio sólo se muestra uno grande: el que empezó más reciente."
+    : "Aparecerá en el inicio, como lo primero que se ve después de la portada, mientras esté en curso.";
+}
+
+// ── Fotos del carrusel ────────────────────────────
+function handleEventFiles(files) {
+  const cupos = MAX_EV_PHOTOS - evPhotos.length;
+  if (cupos <= 0) { adminToast("Máximo " + MAX_EV_PHOTOS + " fotos por evento", "err"); return; }
+  let omitidas = 0;
+  Array.from(files).slice(0, cupos).forEach(file => {
+    // Se achican antes de subir, así que se acepta más peso que en los productos.
+    if (!file.type.startsWith("image/") || file.size > 15 * 1024 * 1024) { omitidas++; return; }
+    evPhotos.push({ file, preview: URL.createObjectURL(file) });
+  });
+  if (omitidas) adminToast("Algunas fotos se omitieron (no son imagen o pesan más de 15 MB)", "err");
+  document.getElementById("ev-images").value = "";
+  renderEventPhotos();
+}
+
+function renderEventPhotos() {
+  const grid = document.getElementById("ev-previews");
+  const flecha = d => d < 0
+    ? `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12.5 4l-6 6 6 6"/></svg>`
+    : `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7.5 4l6 6-6 6"/></svg>`;
+
+  grid.innerHTML = evPhotos.map((f, i) => `
+    <div class="preview-item${f.file ? " preview-new" : ""}">
+      <img src="${esc(f.url || f.preview)}" alt="Foto ${i + 1}">
+      <button class="preview-remove" type="button" onclick="removeEventPhoto(${i})" aria-label="Quitar foto ${i + 1}">&times;</button>
+      <span class="preview-tag${i === 0 ? " new" : ""}">${i === 0 ? "Portada" : f.file ? "Nueva" : i + 1}</span>
+      ${evPhotos.length > 1 ? `
+      <div class="ev-ph-move">
+        <button type="button" onclick="moveEventPhoto(${i},-1)" ${i === 0 ? "disabled" : ""} aria-label="Mover foto ${i + 1} a la izquierda">${flecha(-1)}</button>
+        <button type="button" onclick="moveEventPhoto(${i},1)" ${i === evPhotos.length - 1 ? "disabled" : ""} aria-label="Mover foto ${i + 1} a la derecha">${flecha(1)}</button>
+      </div>` : ""}
+    </div>`).join("")
+    + (evPhotos.length < MAX_EV_PHOTOS ? `
+    <button type="button" class="preview-item preview-add" onclick="document.getElementById('ev-images').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Agregar</span>
+    </button>` : "");
+}
+
+function removeEventPhoto(i) {
+  const [f] = evPhotos.splice(i, 1);
+  if (f && f.preview) URL.revokeObjectURL(f.preview);
+  renderEventPhotos();
+}
+
+function moveEventPhoto(i, d) {
+  const j = i + d;
+  if (j < 0 || j >= evPhotos.length) return;
+  [evPhotos[i], evPhotos[j]] = [evPhotos[j], evPhotos[i]];
+  renderEventPhotos();
+}
+
+function clearEventPhotos() {
+  evPhotos.forEach(f => f.preview && URL.revokeObjectURL(f.preview));
+  evPhotos = [];
+}
+
+/** Achica la foto (lado mayor 1800 px, JPG): el almacenamiento gratis se llena rápido. */
+function compressImage(file, lado = 1800, calidad = 0.86) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const k = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+      // Ya es chica y liviana: no se toca.
+      if (k === 1 && file.size < 600 * 1024 && /jpe?g/i.test(file.type)) return resolve(file);
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * k);
+      c.height = Math.round(img.naturalHeight * k);
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff";                  // los PNG con transparencia no quedan negros
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => resolve(b || file), "image/jpeg", calidad);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };   // si no se puede achicar, va tal cual
+    img.src = url;
+  });
+}
+
+/** Sube las fotos nuevas y devuelve TODAS las URLs, en el orden elegido. */
+async function uploadEventPhotos() {
+  if (evPhotos.some(f => f.file) && !storage) {
+    throw new Error("El almacenamiento de fotos no está disponible.");
+  }
+  const urls = [];
+  let n = 0;
+  for (const f of evPhotos) {
+    if (f.url) { urls.push(f.url); continue; }
+    const blob = await compressImage(f.file);
+    const base = f.file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "_").slice(-40) || "foto";
+    // Misma carpeta que las fotos de los pijamas: ya está permitida en Storage.
+    const ref  = storage.ref(`products/evento_${Date.now()}_${n++}_${base}.jpg`);
+    const snap = await ref.put(blob, { contentType: blob.type || "image/jpeg" });
+    urls.push(await snap.ref.getDownloadURL());
+  }
+  return urls;
+}
+
+// ── Enlace de la página ───────────────────────────
+function eventPageUrl(id) {
+  return new URL("colaboracion.html?c=" + encodeURIComponent(id), location.href).href;
+}
+async function copyEventLink() {
+  const input = document.getElementById("ev-link");
+  try {
+    await navigator.clipboard.writeText(input.value);
+    adminToast("Enlace copiado ✓");
+  } catch (e) {
+    input.select();
+    adminToast("Selecciona el enlace y cópialo", "err");
+  }
+}
+
 function openEventAdd() {
   editingEventId = null;
   evColor = "rosa";
+  clearEventPhotos();
   document.getElementById("event-modal-title").textContent = "Nuevo evento";
+  document.getElementById("ev-kind-temporada").checked = true;
   document.getElementById("ev-name").value    = "";
+  document.getElementById("ev-partner").value = "";
   document.getElementById("ev-emoji").value   = "";
   document.getElementById("ev-tagline").value = "";
+  document.getElementById("ev-desc").value    = "";
+  document.getElementById("ev-cta").value     = "";
+  document.getElementById("ev-featured").checked = false;
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
   const fin = new Date(hoy); fin.setDate(fin.getDate() + 30); fin.setHours(23, 59, 0, 0);
   document.getElementById("ev-start").value = toInputValue(hoy);
   document.getElementById("ev-end").value   = toInputValue(fin);
   document.getElementById("ev-enabled").checked = true;
   document.getElementById("ev-only").checked    = true;
+  document.getElementById("ev-link-section").style.display = "none";
+  updateEventKind();
+  updateEventFeatured();
   renderEventColors();
+  renderEventPhotos();
   renderEventProducts(new Set());
   updateEventHint();
   showEventModal();
@@ -284,17 +460,32 @@ function openEventEdit(id) {
   const ev = adminEvents.byId[id];
   if (!ev) return;
   editingEventId = id;
-  evColor = EVENT_COLORS[ev.color] ? ev.color : "rosa";
+  evColor = (EVENT_COLORS[ev.color] || isHexColor(ev.color)) ? ev.color : "rosa";
+  clearEventPhotos();
+  evPhotos = eventImages(ev).map(url => ({ url }));
   document.getElementById("event-modal-title").textContent = "Editar evento";
+  (eventKind(ev) === "colaboracion" ? document.getElementById("ev-kind-colab")
+                                    : document.getElementById("ev-kind-temporada")).checked = true;
   document.getElementById("ev-name").value    = ev.name    || "";
+  document.getElementById("ev-partner").value = ev.partner || "";
   document.getElementById("ev-emoji").value   = ev.emoji   || "";
   document.getElementById("ev-tagline").value = ev.tagline || "";
+  document.getElementById("ev-desc").value    = ev.description || "";
+  document.getElementById("ev-cta").value     = ev.ctaLabel || "";
+  document.getElementById("ev-featured").checked = ev.featured === true;
   const ini = evDate(ev.startsAt), fin = evDate(ev.endsAt);
   document.getElementById("ev-start").value = ini ? toInputValue(ini) : "";
   document.getElementById("ev-end").value   = fin ? toInputValue(fin) : "";
   document.getElementById("ev-enabled").checked = ev.enabled !== false;
   document.getElementById("ev-only").checked    = ev.onlyDuring !== false;
+  const url = eventPageUrl(id);
+  document.getElementById("ev-link").value = url;
+  document.getElementById("ev-link-open").href = url;
+  document.getElementById("ev-link-section").style.display = "";
+  updateEventKind();
+  updateEventFeatured();
   renderEventColors();
+  renderEventPhotos();
   renderEventProducts(new Set(adminProducts.filter(p => p.eventId === id).map(p => p.id)));
   updateEventHint();
   showEventModal();
@@ -313,6 +504,7 @@ function closeEventModal() {
   m.style.display = "none";
   unlockScroll();
   releaseFocus(m);
+  clearEventPhotos();
   editingEventId = null;
 }
 
@@ -360,6 +552,11 @@ async function saveEvent() {
   const fin    = fromInput("ev-end");
 
   if (!nombre)         { adminToast("Ponle un nombre al evento", "err"); return; }
+  if (eventKindValue() === "colaboracion" && !evPhotos.length) {
+    adminToast("Agrega la foto de portada de la colaboración", "err");
+    document.getElementById("ev-dropzone").scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
+  }
   if (!inicio || !fin) { adminToast("Elige la fecha de inicio y la de fin", "err"); return; }
   if (fin <= inicio)   { adminToast("La fecha de fin tiene que ser posterior a la de inicio", "err"); return; }
 
@@ -367,10 +564,18 @@ async function saveEvent() {
   setLoading(btn, true, "event-save-loader");
   try {
     const id = esNuevo ? await uniqueEventId(nombre, inicio) : editingEventId;
+    const tipo = eventKindValue();
+    const imagenes = await uploadEventPhotos();      // sube las nuevas; devuelve todas en orden
     const data = {
       name:       nombre,
-      emoji:      document.getElementById("ev-emoji").value.trim(),
+      kind:       tipo,
+      partner:    tipo === "colaboracion" ? document.getElementById("ev-partner").value.trim() : "",
+      emoji:      tipo === "colaboracion" ? "" : document.getElementById("ev-emoji").value.trim(),
       tagline:    document.getElementById("ev-tagline").value.trim(),
+      description: document.getElementById("ev-desc").value.trim(),
+      images:     imagenes,
+      featured:   document.getElementById("ev-featured").checked,
+      ctaLabel:   document.getElementById("ev-cta").value.trim(),
       color:      evColor,
       startsAt:   firebase.firestore.Timestamp.fromDate(inicio),
       endsAt:     firebase.firestore.Timestamp.fromDate(fin),

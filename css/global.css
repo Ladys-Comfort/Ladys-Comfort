@@ -215,6 +215,15 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
 .nav-link.active        { color:var(--neon); }
 .nav-link.active::after { transform:scaleX(1); }
 
+/* Círculo con la portada (colaboraciones) o el emoji (temporadas) de las tarjetas de evento. */
+.season-emoji, .event-emoji { overflow:hidden; }
+.season-emoji img, .event-emoji img { width:100%; height:100%; object-fit:cover; }
+
+/* Enlace a la colaboración en curso (js/events.js · renderNavCollab). Sólo la
+   estrella lleva el color del evento: el texto conserva el contraste del tema. */
+.nav-collab { max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nav-collab-star { color:var(--ev); }
+
 .nav-actions { display:flex; align-items:center; gap:.7rem; }
 
 /* Theme toggle */
@@ -289,6 +298,7 @@ header { position:fixed; top:0; left:0; right:0; z-index:500; }
     z-index:400; box-shadow:var(--shadow-3);
   }
   .nav-links .nav-link { font-size:1.1rem; }
+  .nav-links .nav-collab { max-width:100%; }
   #navbar.nav-open .nav-links {
     transform:translateX(0); visibility:visible;
     transition:transform .3s var(--ease-out), visibility 0s;

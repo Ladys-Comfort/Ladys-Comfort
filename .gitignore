@@ -1,2 +1,6 @@
 .vercel
 .env*
+
+# Vistas previas y guías locales (no se publican)
+_vista-previa-*.html
+guias/

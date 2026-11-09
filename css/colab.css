@@ -1,0 +1,242 @@
+/* =====================================================
+   LADYS COMFORT — Colaboraciones
+   Carrusel de fotos · panel destacado del inicio ·
+   página propia de cada colaboración.
+   Cada evento trae su color en --ev / --ev-ink (js/events.js).
+===================================================== */
+
+/* ════════════════════════════════════════════════
+   CARRUSEL
+   El track es un scroller horizontal PROPIO: no ensancha la página.
+════════════════════════════════════════════════ */
+.ccar { position:relative; width:100%; height:100%; overflow:hidden; background:var(--dark-3); }
+.ccar-track {
+  display:flex; height:100%;
+  overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory; scroll-behavior:auto;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.ccar-track::-webkit-scrollbar { display:none; }
+.ccar-track:focus-visible { outline:3px solid var(--ev, var(--neon)); outline-offset:-3px; }
+.ccar-slide { flex:0 0 100%; min-width:0; height:100%; scroll-snap-align:start; scroll-snap-stop:always; }
+.ccar-slide img { width:100%; height:100%; object-fit:cover; object-position:center; user-select:none; -webkit-user-drag:none; }
+
+.ccar-btn {
+  position:absolute; top:50%; z-index:3; transform:translateY(-50%);
+  width:46px; height:46px; border-radius:50%;
+  display:grid; place-items:center;
+  background:rgba(10,8,12,.55); color:#fff;
+  border:1px solid rgba(255,255,255,.28);
+  transition:background var(--trans), color var(--trans), transform var(--trans);
+}
+.ccar-btn svg { width:20px; height:20px; }
+.ccar-prev { left:1rem; }
+.ccar-next { right:1rem; }
+.ccar-btn:focus-visible { outline:3px solid var(--ev, var(--neon)); outline-offset:2px; }
+@media (hover:hover) and (pointer:fine) {
+  .ccar-btn:hover { background:var(--ev, var(--neon)); color:var(--ev-ink, #fff); transform:translateY(-50%) scale(1.08); }
+}
+.ccar-dots {
+  position:absolute; z-index:3; left:0; right:0; bottom:1rem;
+  display:flex; justify-content:center; gap:.5rem; pointer-events:none;
+}
+.ccar-dot {
+  pointer-events:auto; width:9px; height:9px; border-radius:9px; padding:0;
+  background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.25);
+  transition:width .3s var(--ease-out), background .3s;
+}
+.ccar-dot.on { width:28px; background:var(--ev, var(--neon)); }
+/* Área táctil cómoda sin agrandar el punto. */
+.ccar-dot { position:relative; }
+.ccar-dot::after { content:''; position:absolute; inset:-12px -5px; }
+
+/* ════════════════════════════════════════════════
+   PANEL DE COLABORACIÓN (inicio y página propia)
+   A pantalla completa, como una portada de campaña: la foto manda,
+   el título va al centro y la frase en un recuadro con dos líneas.
+   Sin emojis: una colaboración se identifica por su foto.
+════════════════════════════════════════════════ */
+#destacado { max-width:none; padding:0; margin:0; }
+#destacado[hidden] { display:none; }
+
+.spot {
+  position:relative; isolation:isolate; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  min-height:clamp(560px, 84vh, 820px);
+  background:#0a080c; color:#fff;
+  border-bottom:1px solid color-mix(in srgb, var(--ev) 40%, var(--border));
+}
+.spot-media { position:absolute; inset:0; background:#0a080c; }
+.spot-media .ccar { position:absolute; inset:0; }
+.spot-shade {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(8,5,10,.52) 0%, rgba(8,5,10,.18) 28%, rgba(8,5,10,.34) 58%, rgba(8,5,10,.9) 100%),
+    radial-gradient(ellipse at center, rgba(8,5,10,.34) 0%, transparent 70%);
+}
+/* Sin fotos (sólo colecciones de temporada): el color del evento, sin dibujos. */
+.spot-media.is-plain {
+  background:
+    radial-gradient(ellipse at 78% 22%, color-mix(in srgb, var(--ev) 58%, #0a080c) 0%, transparent 60%),
+    radial-gradient(ellipse at 8% 100%, color-mix(in srgb, var(--ev) 30%, #0a080c) 0%, transparent 62%),
+    #0a080c;
+}
+
+.spot-body {
+  position:relative; z-index:4; width:min(920px, 100%);
+  padding:7rem 1.6rem 6rem;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+.spot-kicker {
+  display:flex; align-items:center; justify-content:center; gap:.7rem;
+  font-size:.72rem; font-weight:500; letter-spacing:.24em; text-transform:uppercase;
+  color:rgba(255,255,255,.82);
+}
+.spot-kicker::before { content:''; width:34px; height:2px; background:var(--ev); }
+.spot-kicker i { font-style:normal; opacity:.55; }
+.spot-title {
+  font-family:var(--disp); font-weight:700; color:#fff;
+  font-size:clamp(3rem, 9.5vw, 8rem); line-height:.95; letter-spacing:-.035em;
+  margin:1.2rem 0 1.6rem; overflow-wrap:anywhere;
+  text-shadow:0 2px 30px rgba(0,0,0,.35);
+}
+.spot-note {
+  display:flex; align-items:center; justify-content:center; gap:.9rem;
+  max-width:100%; padding:.7rem 1.3rem .65rem;
+  border-top:1px solid rgba(255,255,255,.6); border-bottom:1px solid rgba(255,255,255,.6);
+  font-size:.74rem; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:#fff;
+}
+.spot-note i { font-style:normal; color:rgba(255,255,255,.5); }
+.spot-desc {
+  margin-top:1.4rem; max-width:560px; font-size:1rem; line-height:1.7; color:rgba(255,255,255,.82);
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
+.spot-meta { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:1.4rem; }
+.spot-chip {
+  padding:.32rem .9rem; border-radius:40px; font-size:.8rem; font-weight:500;
+  border:1px solid rgba(255,255,255,.4); color:#fff; background:rgba(8,5,10,.4);
+}
+.spot-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.8rem; margin-top:2rem; }
+.spot-cta {
+  display:inline-flex; align-items:center; gap:.65rem;
+  padding:1.1rem 2.5rem; border-radius:40px;
+  background:var(--ev); color:var(--ev-ink);
+  font-weight:700; font-size:1rem; letter-spacing:.01em;
+  box-shadow:0 14px 40px color-mix(in srgb, var(--ev) 45%, transparent);
+  transition:transform var(--trans), box-shadow var(--trans);
+}
+.spot-cta svg { width:18px; height:18px; transition:transform var(--trans); }
+.spot-cta:focus-visible { outline:3px solid #fff; outline-offset:3px; }
+@media (hover:hover) and (pointer:fine) {
+  .spot-cta:hover { transform:translateY(-2px); box-shadow:0 20px 48px color-mix(in srgb, var(--ev) 55%, transparent); }
+  .spot-cta:hover svg { transform:translateX(4px); }
+}
+
+/* Flechas en los bordes y puntos abajo al centro. */
+.spot .ccar-prev { left:1.4rem; }
+.spot .ccar-next { right:1.4rem; }
+.spot .ccar-dots { bottom:1.5rem; }
+
+@media (max-width:720px) {
+  .spot { min-height:min(720px, 86svh); align-items:flex-end; }
+  .spot-body { padding:6rem 1.2rem 4.2rem; }
+  .spot-title { font-size:clamp(2.6rem, 14vw, 4rem); margin:1rem 0 1.3rem; }
+  .spot-note { font-size:.66rem; letter-spacing:.14em; padding:.6rem .9rem .55rem; }
+  .spot-desc { -webkit-line-clamp:2; font-size:.95rem; }
+  .spot-cta { width:100%; max-width:340px; justify-content:center; }
+  /* En el teléfono se desliza con el dedo: las flechas sobrarían encima del texto. */
+  .spot .ccar-btn { display:none; }
+  .spot .ccar-dots { bottom:1.2rem; }
+}
+
+/* ════════════════════════════════════════════════
+   PÁGINA DE LA COLABORACIÓN
+════════════════════════════════════════════════ */
+.colab-page { padding-top:76px; min-height:100vh; }
+.chero { margin:0; padding:0; }
+.chero .spot { min-height:min(780px, calc(100vh - 76px)); }
+.chero-skel {
+  height:clamp(380px, 44vw, 560px); border-radius:28px;
+  background:linear-gradient(100deg, var(--dark-3) 30%, var(--dark-4) 50%, var(--dark-3) 70%);
+  background-size:220% 100%; animation:chero-shine 1.4s linear infinite;
+}
+@keyframes chero-shine { to { background-position:-120% 0; } }
+@media (prefers-reduced-motion: reduce) { .chero-skel { animation:none; } }
+
+.cabout { max-width:1240px; margin:0 auto; padding:3.2rem 2.5rem 2.6rem; }
+.cabout[hidden] { display:none; }
+.cabout-grid {
+  display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:2.4rem 4rem;
+  align-items:start;
+}
+.cabout-eyebrow {
+  font-size:.74rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--neon); margin-bottom:.8rem;   /* no el color del evento: un dorado no se lee sobre fondo claro */
+}
+.cabout h2 {
+  font-family:var(--disp); font-size:clamp(1.6rem, 3.2vw, 2.3rem);
+  font-weight:700; line-height:1.15; letter-spacing:-.02em; color:var(--white);
+  margin-bottom:1rem; overflow-wrap:anywhere;
+}
+.cabout-text { font-size:1.03rem; line-height:1.8; color:var(--text); white-space:pre-line; overflow-wrap:anywhere; }
+.cabout-card {
+  padding:1.5rem 1.6rem; border-radius:var(--rad-lg);
+  background:var(--dark-2); border:1px solid color-mix(in srgb, var(--ev, var(--neon)) 40%, var(--border));
+}
+.cabout-facts { display:grid; gap:1rem; margin:0; }
+.cabout-facts dt { font-size:.7rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.cabout-facts dd { margin:.15rem 0 0; font-size:1.02rem; font-weight:500; color:var(--white); overflow-wrap:anywhere; }
+.cabout-share {
+  margin-top:1.4rem; width:100%;
+  display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+  padding:.85rem 1.2rem; border-radius:40px; font-weight:600; font-size:.92rem;
+  border:1px solid var(--border-hi); color:var(--text);
+  transition:border-color var(--trans), background var(--trans), color var(--trans);
+}
+.cabout-share svg { width:17px; height:17px; }
+@media (hover:hover) and (pointer:fine) {
+  .cabout-share:hover { border-color:var(--neon); color:var(--neon); background:var(--neon-faint); }
+}
+
+/* Encabezado de la sección de piezas */
+.cpieces-head {
+  max-width:1240px; margin:0 auto; padding:1.2rem 2.5rem 1.4rem;
+  display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+}
+#piezas { scroll-margin-top:110px; }
+.cpieces-head[hidden] { display:none; }
+.cpieces-head h2 {
+  font-family:var(--disp); font-size:clamp(1.5rem, 3vw, 2.1rem); font-weight:700; color:var(--white);
+}
+.colab-page .cat-toolbar[hidden], .colab-page .cat-main[hidden], .colab-page .active-filters[hidden] { display:none; }
+
+/* Mensajes: aún no empieza, terminó, no existe… */
+.colab-note { max-width:620px; margin:0 auto; padding:2.4rem 1.5rem 4rem; text-align:center; }
+.colab-note-icon {
+  width:76px; height:76px; margin:0 auto 1.2rem; border-radius:50%;
+  display:grid; place-items:center; font-size:2.2rem;
+  background:color-mix(in srgb, var(--ev, var(--neon)) 18%, var(--dark-3));
+  border:1px solid color-mix(in srgb, var(--ev, var(--neon)) 55%, transparent);
+}
+.colab-note h2 { font-family:var(--disp); font-size:clamp(1.5rem, 3.6vw, 2rem); color:var(--white); margin-bottom:.6rem; }
+.colab-note p { color:var(--muted); line-height:1.7; margin-bottom:1.6rem; }
+.colab-note-btn {
+  display:inline-flex; align-items:center; gap:.5rem; padding:.95rem 2rem; border-radius:40px;
+  background:var(--ev, var(--neon)); color:var(--ev-ink, #fff); font-weight:700;
+}
+
+@media (max-width:900px) {
+  .cabout { padding:2.4rem 1.5rem 2rem; }
+  .cabout-grid { grid-template-columns:minmax(0,1fr); gap:1.8rem; }
+  .cpieces-head { padding:1rem 1.5rem 1.2rem; }
+}
+@media (max-width:720px) {
+  .chero .spot { min-height:min(720px, calc(100svh - 76px)); }
+  .cabout { padding:2rem 1rem 1.6rem; }
+  .cpieces-head { padding:.8rem 1.2rem 1rem; }
+}
+@media (max-width:380px) {
+  .cabout { padding-left:.8rem; padding-right:.8rem; }
+}

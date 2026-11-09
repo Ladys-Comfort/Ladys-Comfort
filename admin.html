@@ -392,24 +392,101 @@
 
       <div class="form-section">
         <p class="fsec-title">Información</p>
+
+        <div class="ev-kind" role="radiogroup" aria-label="Tipo de evento">
+          <label class="ev-kind-opt">
+            <input type="radio" name="ev-kind" id="ev-kind-temporada" value="temporada" checked onchange="updateEventKind()">
+            <span><b>Colección de temporada</b><small>Halloween, Navidad, Día de la Madre…</small></span>
+          </label>
+          <label class="ev-kind-opt">
+            <input type="radio" name="ev-kind" id="ev-kind-colab" value="colaboracion" onchange="updateEventKind()">
+            <span><b>Colaboración</b><small>Una edición hecha con alguien más</small></span>
+          </label>
+        </div>
+
         <div class="fields-grid">
           <div class="fgroup field-full">
             <label for="ev-name">Nombre <span style="color:var(--neon)">*</span></label>
             <input type="text" id="ev-name" maxlength="40" placeholder="Ej: Halloween, Navidad, Colab con Sofi">
           </div>
-          <div class="fgroup">
+          <div class="fgroup field-full" id="ev-partner-group">
+            <label for="ev-partner">Con quién <span class="opt">(opcional)</span></label>
+            <input type="text" id="ev-partner" maxlength="40" placeholder="Ej: Sofi, @sofi.diseña, Marca X">
+          </div>
+          <div class="fgroup" id="ev-emoji-group">
             <label for="ev-emoji">Emoji</label>
             <input type="text" id="ev-emoji" maxlength="8" placeholder="&#127875;">
           </div>
           <div class="fgroup">
             <label>Color</label>
             <div class="ev-colors" id="ev-colors" role="group" aria-label="Color del evento"></div>
+            <label class="ev-custom-color" for="ev-color-custom">
+              <input type="color" id="ev-color-custom" value="#ff3f96" oninput="pickCustomEventColor(this.value)">
+              <span>Otro color</span>
+            </label>
           </div>
           <div class="fgroup field-full">
-            <label for="ev-tagline">Frase corta (opcional)</label>
+            <label for="ev-tagline">Frase corta <span class="opt">(opcional)</span></label>
             <input type="text" id="ev-tagline" maxlength="80" placeholder="Ej: Pijamas para una noche de miedo">
           </div>
+          <div class="fgroup field-full">
+            <label for="ev-desc">Descripción <span class="opt">(opcional)</span></label>
+            <textarea id="ev-desc" maxlength="700" rows="4"
+                      placeholder="Cuenta la historia: quién es, qué hace especial a esta edición, cuántas piezas hay…"></textarea>
+            <p class="field-note">Sale en la página propia de la colaboración.</p>
+          </div>
         </div>
+      </div>
+
+      <div class="form-section">
+        <p class="fsec-title" id="ev-photos-title">Fotos del carrusel <span class="opt">(opcional)</span></p>
+        <div class="dropzone" id="ev-dropzone" onclick="document.getElementById('ev-images').click()">
+          <div class="dz-inner">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.3">
+              <rect x="4" y="8" width="40" height="32" rx="4"/>
+              <circle cx="17" cy="20" r="4"/>
+              <path d="M4 32l10-10 8 8 6-6 16 14"/>
+            </svg>
+            <p>Arrastra fotos aquí o <span>haz clic para seleccionar</span></p>
+            <small>Hasta 8 fotos · JPG, PNG, WEBP · se ajustan solas de tamaño</small>
+          </div>
+        </div>
+        <input type="file" id="ev-images" accept="image/*" multiple style="display:none" onchange="handleEventFiles(this.files)">
+        <div class="previews-grid" id="ev-previews"></div>
+        <p class="fsec-hint" id="ev-photos-hint">
+          <span id="ev-photos-hint-colab"><strong>La primera foto es la portada</strong> y es obligatoria: es lo primero que ve la clienta, a pantalla completa. </span>
+          Usa fotos <strong>horizontales</strong> (como las de una pantalla): en el computador se ven completas y en el celular se recortan al centro.
+          Las demás fotos se muestran en el carrusel.
+        </p>
+      </div>
+
+      <div class="form-section">
+        <p class="fsec-title">En el inicio <span class="opt">(opcional)</span></p>
+        <label class="lc-check">
+          <input type="checkbox" id="ev-featured" onchange="updateEventFeatured()">
+          <span class="check-box">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>
+          </span>
+          <span class="check-label">Mostrarlo en grande en la página de inicio
+            <small class="muted-inline">(con el carrusel de fotos y un botón a su página; sólo mientras esté en curso)</small></span>
+        </label>
+        <div class="fields-grid ev-cta-row" id="ev-cta-row" style="margin-top:.9rem">
+          <div class="fgroup field-full">
+            <label for="ev-cta">Texto del botón <span class="opt">(opcional)</span></label>
+            <input type="text" id="ev-cta" maxlength="30" placeholder="Ver la colaboración">
+          </div>
+        </div>
+        <p class="fsec-hint" id="ev-featured-hint"></p>
+      </div>
+
+      <div class="form-section" id="ev-link-section" style="display:none">
+        <p class="fsec-title">Enlace de su página</p>
+        <div class="ev-link">
+          <input type="text" id="ev-link" readonly aria-label="Enlace de la página del evento">
+          <button type="button" class="btn-cancel" onclick="copyEventLink()">Copiar</button>
+          <a class="btn-cancel" id="ev-link-open" href="#" target="_blank" rel="noopener">Abrir</a>
+        </div>
+        <p class="field-note">Compártelo en Instagram o por WhatsApp. Sólo se ve mientras el evento esté en curso.</p>
       </div>
 
       <div class="form-section">

@@ -47,6 +47,10 @@ const finalPrice   = p => (p.isOffer && p.offerPrice ? p.offerPrice : p.price) |
 const swatchOf     = p => COLOR_MAP[p.color?.toLowerCase()] || "#b0849a";
 const productById  = id => allProducts.find(p => p.id === id);
 
+// En colaboracion.html el evento viene fijo en la URL (?c=) y no se puede quitar:
+// esa página usa este mismo catálogo, pero sólo con las pijamas de la colaboración.
+const eventoFijo = () => window.EVENTO_FIJO || "";
+
 /** Eventos en curso que tienen al menos un pijama visible. */
 function activeEvents() {
   return eventCtx.list.filter(ev =>
@@ -73,6 +77,7 @@ async function loadProducts() {
       loadEvents()
     ]);
     eventCtx = eventos;
+    renderNavCollab(eventCtx, { current: eventoFijo() });
 
     // Un pijama de un evento que aún no empieza (o ya terminó) no se muestra.
     allProducts = snap.docs
@@ -80,11 +85,13 @@ async function loadProducts() {
       .filter(p => isProductVisible(p, eventCtx));
 
     // Un enlace a un evento que no está activo no debe dejar el catálogo vacío.
-    if (state.evento && !activeEvents().some(e => e.id === state.evento)) state.evento = "";
+    // (En la página de una colaboración no se quita: ella misma explica si no está activa.)
+    if (state.evento && !eventoFijo() && !activeEvents().some(e => e.id === state.evento)) state.evento = "";
 
     renderEventBanners();
     renderFilterCounts();
     render();
+    if (window.onCatalogReady) window.onCatalogReady(eventCtx);
   } catch (e) {
     document.getElementById("products-grid").innerHTML = `
       <div class="grid-msg grid-msg-error">
@@ -96,6 +103,7 @@ async function loadProducts() {
         <button class="btn-retry" type="button" onclick="loadProducts()">Reintentar</button>
       </div>`;
     document.getElementById("results-count").textContent = "";
+    if (window.onCatalogReady) window.onCatalogReady({ loaded: false, list: [], byId: {} });
   }
 }
 
@@ -193,7 +201,7 @@ function buildCard(p, index = 0) {
   // se deja visible vuelve a ser un pijama normal).
   const ev = eventOf(p);
   const evBadge = ev && eventStatus(ev) === "activo"
-    ? `<span class="badge b-event" style="${eventStyle(ev)}">${esc(ev.emoji || "✦")} ${esc(ev.name)}</span>`
+    ? `<span class="badge b-event" style="${eventStyle(ev)}">${eventGlyph(ev)} ${esc(ev.name)}</span>`
     : "";
 
   const badges = [
@@ -519,7 +527,7 @@ function setSearch(value) {
 }
 
 function resetFilters() {
-  state = { size: "todas", q: "", sort: "nuevo", evento: "" };
+  state = { size: "todas", q: "", sort: "nuevo", evento: eventoFijo() };
   const input = document.getElementById("cat-search");
   if (input) input.value = "";
   document.getElementById("search-clear")?.classList.remove("show");
@@ -544,9 +552,10 @@ function renderFilterCounts() {
     if (btn && key !== "todas") btn.disabled = n === 0;
   };
 
-  setCount("todas", allProducts.length);
+  const pool = eventoFijo() ? allProducts.filter(p => p.eventId === eventoFijo()) : allProducts;
+  setCount("todas", pool.length);
   SIZES.forEach(s =>
-    setCount(s, allProducts.filter(p => stockOf(p, s) > 0).length)
+    setCount(s, pool.filter(p => stockOf(p, s) > 0).length)
   );
 }
 
@@ -558,10 +567,10 @@ function buildActiveChips() {
       ${state.size === "U" ? "Talla única" : "Talla " + esc(state.size)} <span aria-hidden="true">×</span>
       <span class="sr-only">Quitar filtro de talla</span></button>`);
   }
-  if (state.evento && eventCtx.byId[state.evento]) {
+  if (state.evento && !eventoFijo() && eventCtx.byId[state.evento]) {
     const ev = eventCtx.byId[state.evento];
     chips.push(`<button type="button" class="achip" onclick="setEvento('')">
-      ${esc(ev.emoji || "✦")} ${esc(ev.name)} <span aria-hidden="true">×</span>
+      ${eventGlyph(ev)} ${esc(ev.name)} <span aria-hidden="true">×</span>
       <span class="sr-only">Quitar filtro de colección</span></button>`);
   }
   if (state.q) {
@@ -578,6 +587,7 @@ function buildActiveChips() {
 // ── Colecciones de temporada ──────────────────────
 /** Elige (o quita, con "") el filtro de colección. Pulsar la misma lo quita. */
 function setEvento(slug) {
+  if (eventoFijo()) return;
   state.evento = state.evento === slug ? "" : slug;
   renderEventBanners();
   render();
@@ -597,9 +607,9 @@ function renderEventBanners() {
     return `
     <button type="button" class="event-card${on ? " on" : ""}" style="${eventStyle(ev)}"
             aria-pressed="${on}" onclick="setEvento('${escJs(ev.id)}')">
-      <span class="event-emoji" aria-hidden="true">${esc(ev.emoji || "✦")}</span>
+      <span class="event-emoji" aria-hidden="true">${eventIconHTML(ev)}</span>
       <span class="event-info">
-        <span class="event-kicker">Colección de temporada</span>
+        <span class="event-kicker">${esc(eventKindLabel(ev))}${ev.partner ? " · " + esc(ev.partner) : ""}</span>
         <strong class="event-name">${esc(ev.name)}</strong>
         ${ev.tagline ? `<span class="event-tagline">${esc(ev.tagline)}</span>` : ""}
       </span>
@@ -617,7 +627,7 @@ function syncUrl() {
   const params = new URLSearchParams();
   if (state.size !== "todas") params.set("talla", state.size);
   if (state.q)               params.set("q", state.q);
-  if (state.evento)          params.set("evento", state.evento);
+  if (state.evento)          params.set(eventoFijo() ? "c" : "evento", state.evento);
   if (state.sort !== "nuevo") params.set("orden", state.sort);
   const qs = params.toString();
   history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
@@ -629,7 +639,7 @@ function readUrl() {
   if (talla === "UNICA" || talla === "ÚNICA") talla = "U";
   if (SIZES.includes(talla)) state.size = talla;
   state.q = params.get("q") || "";
-  state.evento = params.get("evento") || "";
+  state.evento = eventoFijo() || params.get("evento") || "";
   const orden = params.get("orden");
   if (["precio-asc", "precio-desc", "nombre"].includes(orden)) state.sort = orden;
 

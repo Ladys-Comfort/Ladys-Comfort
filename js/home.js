@@ -28,7 +28,9 @@ async function loadHomeStats() {
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(p => isProductVisible(p, eventos));
 
-    renderTemporada(eventos, all);
+    const destacado = renderDestacado(eventos, all);
+    renderTemporada(eventos, all, destacado);
+    renderNavCollab(eventos);
 
     // Sólo cuentan los que realmente se pueden comprar.
     const conStock = all.filter(p => HOME_STOCK_KEYS.some(s => homeStock(p, s) > 0));
@@ -42,24 +44,45 @@ async function loadHomeStats() {
   }
 }
 
+/**
+ * Colaboración destacada: el foco de atención del inicio. Es opcional: sólo
+ * aparece si Evelyn marcó un evento en curso como "destacado". Lleva un
+ * carrusel con las fotos del evento y un botón a su página.
+ * Devuelve el evento mostrado (o null) para no repetirlo en la franja.
+ */
+function renderDestacado(eventos, productos) {
+  const sec  = document.getElementById("destacado");
+  const cont = document.getElementById("destacado-card");
+  if (!sec || !cont) return null;
+
+  const ev = featuredEvent(eventos);
+  if (!ev) { sec.hidden = true; return null; }
+
+  const n = productos.filter(p => p.eventId === ev.id).length;
+  mountEventSpot(cont, ev, { href: eventHref(ev), count: n, desc: true });
+  sec.hidden = false;
+  return ev;
+}
+
 /** Franja de temporada: una tarjeta por cada colección en curso con pijamas. */
-function renderTemporada(eventos, productos) {
+function renderTemporada(eventos, productos, destacado) {
   const sec  = document.getElementById("temporada");
   const cont = document.getElementById("temporada-list");
   if (!sec || !cont) return;
 
   const activos = eventos.list.filter(ev =>
-    eventStatus(ev) === "activo" && productos.some(p => p.eventId === ev.id));
+    eventStatus(ev) === "activo" &&
+    !(destacado && ev.id === destacado.id) &&
+    productos.some(p => p.eventId === ev.id));
   if (!activos.length) { sec.hidden = true; return; }
 
   cont.innerHTML = activos.map(ev => {
     const n = productos.filter(p => p.eventId === ev.id).length;
     return `
-    <a class="season-card" style="${eventStyle(ev)}"
-       href="catalogo.html?evento=${encodeURIComponent(ev.id)}">
-      <span class="season-emoji" aria-hidden="true">${esc(ev.emoji || "✦")}</span>
+    <a class="season-card" style="${eventStyle(ev)}" href="${esc(eventHref(ev))}">
+      <span class="season-emoji" aria-hidden="true">${eventIconHTML(ev)}</span>
       <span class="season-body">
-        <span class="season-kicker">Colección de temporada · ${esc(eventEndLabel(ev))}</span>
+        <span class="season-kicker">${esc(eventKindLabel(ev))}${ev.partner ? " · " + esc(ev.partner) : ""} · ${esc(eventEndLabel(ev))}</span>
         <strong class="season-name">${esc(ev.name)}</strong>
         ${ev.tagline ? `<span class="season-tagline">${esc(ev.tagline)}</span>` : ""}
       </span>
