@@ -288,12 +288,40 @@
                 <polyline points="2 6 5 9 10 3"/>
               </svg>
             </span>
-            <span class="check-label"><span class="cl-off">🏷 En oferta</span></span>
+            <span class="check-label"><span class="cl-off">🏷 En oferta (descuento)</span></span>
+          </label>
+          <label class="lc-check">
+            <input type="checkbox" id="f-is-combo" onchange="toggleComboField()">
+            <span class="check-box">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="2 6 5 9 10 3"/>
+              </svg>
+            </span>
+            <span class="check-label"><span class="cl-combo">📦 Es un combo</span></span>
           </label>
         </div>
         <div id="offer-row" class="fgroup" style="display:none;margin-top:.9rem">
           <label for="f-offer">Precio de oferta COP</label>
           <input type="number" id="f-offer" placeholder="40000" min="0">
+          <p class="field-note">Debe ser menor al precio normal. En la tienda aparece tachado el precio normal y el porcentaje de descuento.</p>
+        </div>
+        <div id="combo-row" class="fields-grid" style="display:none;margin-top:.9rem">
+          <div class="fgroup">
+            <label for="f-combo-qty">Pijamas que incluye</label>
+            <input type="number" id="f-combo-qty" min="2" max="10" value="2">
+          </div>
+          <div class="fgroup">
+            <label for="f-combo-regular">Precio por separado COP <span class="opt">(opcional)</span></label>
+            <input type="number" id="f-combo-regular" min="0" placeholder="150000">
+          </div>
+          <div class="fgroup field-full">
+            <label for="f-combo-includes">Qué incluye <span class="opt">(opcional)</span></label>
+            <input type="text" id="f-combo-includes" maxlength="120" placeholder="Ej: Camisa + short + pantalón">
+          </div>
+          <p class="field-note field-full">
+            En un combo, el <strong>Precio</strong> de arriba es el del combo completo. Si escribes lo que costarían por separado,
+            la tienda muestra cuánto se ahorra. La clienta elige una sola talla para todo el combo.
+          </p>
         </div>
       </div>
 

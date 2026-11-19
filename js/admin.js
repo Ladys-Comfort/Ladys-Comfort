@@ -105,6 +105,7 @@ function buildRow(p) {
   const badges = [
     total === 0 ? `<span class="atag tag-out">Agotado</span>`     : "",
     p.isNew     ? `<span class="atag tag-new">Nuevo</span>`       : "",
+    p.isCombo === true ? `<span class="atag tag-combo">Combo ×${Math.max(2, parseInt(p.comboQty, 10) || 2)}</span>` : "",
     p.isOffer   ? `<span class="atag tag-off">Oferta</span>`      : "",
     p.isFeatured? `<span class="atag tag-feat">Destacado</span>`  : ""
   ].join("");
@@ -176,7 +177,12 @@ async function openEdit(id) {
   document.getElementById("f-is-feat").checked   = p.isFeatured  || false;
   document.getElementById("f-is-offer").checked  = p.isOffer     || false;
   document.getElementById("f-offer").value       = p.offerPrice  || "";
+  document.getElementById("f-is-combo").checked  = p.isCombo === true;
+  document.getElementById("f-combo-qty").value   = p.comboQty    || 2;
+  document.getElementById("f-combo-regular").value  = p.comboRegularPrice || "";
+  document.getElementById("f-combo-includes").value = p.comboIncludes     || "";
   toggleOfferField();
+  toggleComboField();
   ADMIN_SIZES.forEach(s => {
     const el = document.getElementById(`f-${s}`);
     if (el) el.value = p.sizes?.[s] ?? 0;
@@ -209,8 +215,12 @@ function clearForm() {
   ["f-name","f-color","f-desc","f-price","f-offer"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
-  ["f-is-new","f-is-feat","f-is-offer"].forEach(id => {
+  ["f-is-new","f-is-feat","f-is-offer","f-is-combo"].forEach(id => {
     const el = document.getElementById(id); if (el) el.checked = false;
+  });
+  const cq = document.getElementById("f-combo-qty"); if (cq) cq.value = 2;
+  ["f-combo-regular","f-combo-includes"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
   });
   ADMIN_SIZES.forEach(s => {
     const el = document.getElementById(`f-${s}`); if (el) el.value = 0;
@@ -223,6 +233,7 @@ function clearForm() {
   const inp = document.getElementById("f-images");
   if (inp) inp.value = "";
   toggleOfferField();
+  toggleComboField();
 }
 
 /** Alterna entre el stock por talla (S/M/L/XL) y un único campo de unidades. */
@@ -244,6 +255,11 @@ function toggleTallaUnica() {
 function toggleOfferField() {
   const show = document.getElementById("f-is-offer").checked;
   document.getElementById("offer-row").style.display = show ? "block" : "none";
+}
+
+function toggleComboField() {
+  const show = document.getElementById("f-is-combo").checked;
+  document.getElementById("combo-row").style.display = show ? "grid" : "none";
 }
 
 // ── Imágenes ──────────────────────────────────────
@@ -348,8 +364,11 @@ async function saveProduct() {
   const color = document.getElementById("f-color").value;
   const price = parseFloat(document.getElementById("f-price").value);
 
-  if (!name || !color || isNaN(price) || price < 0) {
-    adminToast("Nombre, color y precio son obligatorios", "err"); return;
+  const isCombo = document.getElementById("f-is-combo").checked;
+
+  // Un combo no tiene un color propio: no se le exige.
+  if (!name || (!color && !isCombo) || isNaN(price) || price < 0) {
+    adminToast(isCombo ? "Nombre y precio son obligatorios" : "Nombre, color y precio son obligatorios", "err"); return;
   }
 
   const isOffer  = document.getElementById("f-is-offer").checked;
@@ -359,6 +378,16 @@ async function saveProduct() {
   }
   if (isOffer && offerP >= price) {
     adminToast("El precio de oferta debe ser menor al precio normal", "err"); return;
+  }
+
+  // Combo: cuántas pijamas trae y, si se quiere, cuánto costarían por separado.
+  const comboQty      = isCombo ? parseInt(document.getElementById("f-combo-qty").value, 10) : null;
+  const comboRegular  = isCombo ? (parseFloat(document.getElementById("f-combo-regular").value) || null) : null;
+  if (isCombo && (!comboQty || comboQty < 2)) {
+    adminToast("Un combo incluye al menos 2 pijamas", "err"); return;
+  }
+  if (isCombo && comboRegular && comboRegular <= (isOffer ? offerP : price)) {
+    adminToast("El precio por separado debe ser mayor que el precio del combo", "err"); return;
   }
 
   // Talla única y stock por talla son excluyentes: se guarda uno u otro,
@@ -389,11 +418,15 @@ async function saveProduct() {
 
     const data = {
       name,
-      color,
+      color:       color || "otro",
       description: document.getElementById("f-desc").value.trim(),
       price,
       isOffer,
       offerPrice:  isOffer ? offerP : null,
+      isCombo,
+      comboQty,
+      comboIncludes:     isCombo ? document.getElementById("f-combo-includes").value.trim() : "",
+      comboRegularPrice: comboRegular,
       isFeatured:  document.getElementById("f-is-feat").checked,
       isNew:       document.getElementById("f-is-new").checked,
       sizes,

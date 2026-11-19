@@ -31,17 +31,62 @@ async function loadHomeStats() {
     const destacado = renderDestacado(eventos, all);
     renderTemporada(eventos, all, destacado);
     renderNavCollab(eventos);
+    renderOfertas(all);
+
+    // Los combos son paquetes, no diseños: no suman a "diseños en catálogo".
+    const disenos = all.filter(p => !isCombo(p));
 
     // Sólo cuentan los que realmente se pueden comprar.
-    const conStock = all.filter(p => HOME_STOCK_KEYS.some(s => homeStock(p, s) > 0));
-    const tallas   = HOME_SIZES.filter(s => all.some(p => homeStock(p, s) > 0));
+    const conStock = disenos.filter(p => HOME_STOCK_KEYS.some(s => homeStock(p, s) > 0));
+    const tallas   = HOME_SIZES.filter(s => disenos.some(p => homeStock(p, s) > 0));
 
-    set("stat-productos", conStock.length || all.length);
+    set("stat-productos", conStock.length || disenos.length);
     set("stat-tallas", tallas.length || 4);
   } catch {
     // Sin conexión dejamos un valor honesto en vez de un guión.
     set("stat-productos", "20+");
   }
+}
+
+/**
+ * Descuentos y combos. Opcional: la sección sólo aparece si la propietaria marcó
+ * al menos un descuento o un combo con unidades disponibles. Sin eso, el inicio
+ * queda exactamente como antes.
+ */
+function renderOfertas(productos) {
+  const sec  = document.getElementById("ofertas");
+  const cont = document.getElementById("ofertas-grid");
+  if (!sec || !cont) return;
+
+  const hayStock = p => HOME_STOCK_KEYS.some(s => homeStock(p, s) > 0);
+  const descuentos = productos.filter(p => hasDiscount(p) && hayStock(p));
+  const combos     = productos.filter(p => isCombo(p) && hayStock(p));
+  if (!descuentos.length && !combos.length) { sec.hidden = true; return; }
+
+  const tarjetas = [];
+  if (descuentos.length) {
+    const max = Math.max(...descuentos.map(p => savingsOf(p).pct));
+    tarjetas.push(`
+    <a class="oferta-card" href="catalogo.html?categoria=ofertas">
+      <span class="oferta-kicker">Descuentos</span>
+      <strong class="oferta-big">Hasta −${max}%</strong>
+      <span class="oferta-sub">${descuentos.length} ${descuentos.length === 1 ? "pijama en oferta" : "pijamas en oferta"}</span>
+      <span class="oferta-cta">Ver descuentos →</span>
+    </a>`);
+  }
+  if (combos.length) {
+    const desde = Math.min(...combos.map(payPrice));
+    tarjetas.push(`
+    <a class="oferta-card" href="catalogo.html?categoria=combos">
+      <span class="oferta-kicker">Combos</span>
+      <strong class="oferta-big">Desde ${money(desde)}</strong>
+      <span class="oferta-sub">${combos.length} ${combos.length === 1 ? "combo disponible" : "combos disponibles"}</span>
+      <span class="oferta-cta">Ver combos →</span>
+    </a>`);
+  }
+  cont.className = tarjetas.length === 1 ? "ofertas-uno" : "";
+  cont.innerHTML = tarjetas.join("");
+  sec.hidden = false;
 }
 
 /**

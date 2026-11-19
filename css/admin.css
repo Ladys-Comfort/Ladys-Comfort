@@ -750,3 +750,10 @@ a.btn-edit-row { text-decoration:none; }
 }
 #ev-photos-hint, #ev-featured-hint { margin-top:.9rem; }
 .req { color:var(--neon); font-weight:700; }
+
+.atag.tag-combo { background:rgba(139,92,246,.14); color:#6d3fd1; }
+[data-theme="dark"] .atag.tag-combo { color:#b79bff; }
+.cl-combo { color:#8b5cf6; }
+[data-theme="dark"] .cl-combo { color:#b79bff; }
+.check-label .cl-combo { color:#8b5cf6; }
+[data-theme="dark"] .check-label .cl-combo { color:#b79bff; }

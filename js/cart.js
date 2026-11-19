@@ -60,7 +60,10 @@ function addToCart(product, size, qty = 1) {
       price,
       qty:   capped,
       image: product.images?.[0] || null,
-      max:   stock
+      max:   stock,
+      // Combo: se anota cuántas pijamas trae para que el pedido por WhatsApp sea claro.
+      combo: product.isCombo === true ? Math.max(2, parseInt(product.comboQty, 10) || 2) : 0,
+      includes: product.isCombo === true ? (product.comboIncludes || "") : ""
     });
   }
 
@@ -184,7 +187,7 @@ function renderCartPanel() {
       <div class="cart-item-swatch">${cartItemThumb(item)}</div>
       <div class="cart-item-info">
         <p class="ci-name">${esc(item.name)}</p>
-        <p class="ci-size">${item.size === "U" ? "Talla única" : "Talla " + esc(item.size)}</p>
+        <p class="ci-size">${item.combo ? `Combo de ${item.combo} pijamas · ` : ""}${item.size === "U" ? "Talla única" : "Talla " + esc(item.size)}</p>
         <p class="ci-price">${money(item.price * item.qty)}</p>
         ${atMax ? `<p class="ci-stock">Último disponible en esta talla</p>` : ""}
       </div>
@@ -216,7 +219,7 @@ function renderCartPanel() {
 function sendWhatsApp() {
   if (!cart.length) return;
   const lines = cart.map(i =>
-    `• *${i.name}* — ${i.size === "U" ? "Talla única" : "Talla " + i.size} ×${i.qty}  →  ${money(i.price * i.qty)}`
+    `• *${i.name}*${i.combo ? ` (combo de ${i.combo} pijamas${i.includes ? ": " + i.includes : ""})` : ""} — ${i.size === "U" ? "Talla única" : "Talla " + i.size} ×${i.qty}  →  ${money(i.price * i.qty)}`
   ).join("\n");
   const msg =
     `Hola Ladys Comfort 🌸\n\nQuiero hacer este pedido:\n\n${lines}\n\n` +

@@ -35,7 +35,8 @@ let primerRender = true;
 // Eventos y colaboraciones de temporada (ver js/events.js).
 let eventCtx = { loaded: false, list: [], byId: {} };
 
-let state = { size: "todas", q: "", sort: "nuevo", evento: "" };
+// cat: "todo" | "ofertas" (descuentos) | "combos"  (ver js/offers.js)
+let state = { size: "todas", q: "", sort: "nuevo", evento: "", cat: "todo" };
 
 // ── Helpers de producto ───────────────────────────
 const stockOf      = (p, s) => Number(p?.sizes?.[s]) || 0;
@@ -43,7 +44,7 @@ const totalStock   = p => SIZES.reduce((sum, s) => sum + stockOf(p, s), 0);
 const availSizes   = p => SIZES.filter(s => stockOf(p, s) > 0);
 /** Producto de talla única: se muestra con una sola pastilla, no con las 4. */
 const esUnica      = p => stockOf(p, "U") > 0;
-const finalPrice   = p => (p.isOffer && p.offerPrice ? p.offerPrice : p.price) || 0;
+const finalPrice   = p => payPrice(p);
 const swatchOf     = p => COLOR_MAP[p.color?.toLowerCase()] || "#b0849a";
 const productById  = id => allProducts.find(p => p.id === id);
 
@@ -89,6 +90,7 @@ async function loadProducts() {
     if (state.evento && !eventoFijo() && !activeEvents().some(e => e.id === state.evento)) state.evento = "";
 
     renderEventBanners();
+    renderCategoryTabs();
     renderFilterCounts();
     render();
     if (window.onCatalogReady) window.onCatalogReady(eventCtx);
@@ -118,6 +120,9 @@ function visibleProducts() {
   if (state.evento) {
     list = list.filter(p => p.eventId === state.evento);
   }
+
+  if (state.cat === "ofertas") list = list.filter(hasDiscount);
+  if (state.cat === "combos")  list = list.filter(isCombo);
 
   if (state.q) {
     const q = state.q.toLowerCase();
@@ -166,6 +171,10 @@ function render() {
 
 /** Explica el resultado vacío según lo que el usuario realmente filtró. */
 function emptyMessage() {
+  if (state.cat === "ofertas" && state.size === "todas" && !state.q)
+    return "Por ahora no hay descuentos disponibles";
+  if (state.cat === "combos" && state.size === "todas" && !state.q)
+    return "Por ahora no hay combos disponibles";
   if (state.evento && state.size === "todas" && !state.q)
     return "Esta colección todavía no tiene pijamas disponibles";
   const talla = state.size === "U" ? "talla única" : "talla " + esc(state.size);
@@ -184,7 +193,8 @@ function buildCard(p, index = 0) {
   const loadAttr = eager
     ? `loading="eager" fetchpriority="high"`
     : `loading="lazy" fetchpriority="low"`;
-  const isOffer = !!(p.isOffer && p.offerPrice);
+  const sv      = savingsOf(p);               // {regular, saved, pct} o null
+  const combo   = isCombo(p);
   const avail   = availSizes(p);
   const stock   = totalStock(p);
   const swatch  = swatchOf(p);
@@ -193,9 +203,7 @@ function buildCard(p, index = 0) {
   // Si hay un filtro de talla activo, esa talla llega preseleccionada.
   const preset = state.size !== "todas" && avail.includes(state.size) ? state.size : null;
 
-  const discount = isOffer && p.price > 0
-    ? Math.round((1 - p.offerPrice / p.price) * 100)
-    : 0;
+  const discount = sv ? sv.pct : 0;
 
   // Etiqueta del evento (sólo si está en curso: una colección terminada que
   // se deja visible vuelve a ser un pijama normal).
@@ -206,6 +214,7 @@ function buildCard(p, index = 0) {
 
   const badges = [
     evBadge,
+    combo        ? `<span class="badge b-combo">Combo ×${comboQtyOf(p)}</span>` : "",
     p.isNew      ? `<span class="badge b-new">Nuevo</span>` : "",
     discount > 0 ? `<span class="badge b-offer">−${discount}%</span>` : "",
     p.isFeatured ? `<span class="badge b-feat">✦ Destacado</span>` : ""
@@ -264,11 +273,14 @@ function buildCard(p, index = 0) {
       </h3>
 
       <div class="pcard-price">
-        ${isOffer
-          ? `<strong class="price-sale">${money(p.offerPrice)}</strong>
-             <s class="price-old">${money(p.price)}</s>`
-          : `<strong class="price-reg">${money(p.price)}</strong>`}
+        ${sv
+          ? `<strong class="price-sale">${money(payPrice(p))}</strong>
+             <s class="price-old">${money(sv.regular)}</s>`
+          : `<strong class="price-reg">${money(payPrice(p))}</strong>`}
       </div>
+
+      ${combo && p.comboIncludes ? `<p class="pcard-combo"><b>Incluye:</b> ${esc(p.comboIncludes)}</p>` : ""}
+      ${combo && sv ? `<p class="pcard-save">Ahorras ${money(sv.saved)}</p>` : ""}
 
       ${lowStock ? `<p class="pcard-low">${stock === 1 ? "¡Última unidad!" : `¡Sólo quedan ${stock}!`}</p>` : ""}
 
@@ -347,13 +359,12 @@ function closeQuick() {
 function buildQuick(p) {
   const id      = escJs(p.id);
   const imgs    = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
-  const isOffer = !!(p.isOffer && p.offerPrice);
+  const sv      = savingsOf(p);
+  const combo   = isCombo(p);
   const stock   = totalStock(p);
   const swatch  = swatchOf(p);
 
-  const discount = isOffer && p.price > 0
-    ? Math.round((1 - p.offerPrice / p.price) * 100)
-    : 0;
+  const discount = sv ? sv.pct : 0;
 
   const main = imgs.length
     ? `<img src="${esc(imgs[0])}" alt="" id="quick-main-blur" class="quick-blur" aria-hidden="true">
@@ -402,6 +413,7 @@ function buildQuick(p) {
 
     <div class="quick-info">
       <div class="quick-badges">
+        ${combo        ? `<span class="badge b-combo">Combo ×${comboQtyOf(p)}</span>` : ""}
         ${p.isNew      ? `<span class="badge b-new">Nuevo</span>` : ""}
         ${discount > 0 ? `<span class="badge b-offer">−${discount}%</span>` : ""}
         ${p.isFeatured ? `<span class="badge b-feat">✦ Destacado</span>` : ""}
@@ -410,10 +422,18 @@ function buildQuick(p) {
       <h2 id="quick-title" class="quick-name">${esc(p.name)}</h2>
 
       <div class="quick-price">
-        ${isOffer
-          ? `<strong class="price-sale">${money(p.offerPrice)}</strong><s class="price-old">${money(p.price)}</s>`
-          : `<strong class="price-reg">${money(p.price)}</strong>`}
+        ${sv
+          ? `<strong class="price-sale">${money(payPrice(p))}</strong><s class="price-old">${money(sv.regular)}</s>`
+          : `<strong class="price-reg">${money(payPrice(p))}</strong>`}
+        ${combo && sv ? `<span class="quick-save">Ahorras ${money(sv.saved)}</span>` : ""}
       </div>
+
+      ${combo ? `
+      <div class="quick-combo">
+        <p class="quick-label">Este combo incluye</p>
+        <p>${comboQtyOf(p)} pijamas${p.comboIncludes ? `: ${esc(p.comboIncludes)}` : ""}.</p>
+        <small>Eliges una talla para todo el combo. Si necesitas tallas distintas, escríbenos por WhatsApp y lo armamos.</small>
+      </div>` : ""}
 
       ${p.description ? `<p class="quick-desc">${esc(p.description)}</p>` : ""}
 
@@ -527,13 +547,14 @@ function setSearch(value) {
 }
 
 function resetFilters() {
-  state = { size: "todas", q: "", sort: "nuevo", evento: eventoFijo() };
+  state = { size: "todas", q: "", sort: "nuevo", evento: eventoFijo(), cat: "todo" };
   const input = document.getElementById("cat-search");
   if (input) input.value = "";
   document.getElementById("search-clear")?.classList.remove("show");
   const sel = document.getElementById("sorter-sel");
   if (sel) sel.value = "nuevo";
   renderEventBanners();
+  renderCategoryTabs();
   setSizeFilter("todas");
 }
 
@@ -567,6 +588,11 @@ function buildActiveChips() {
       ${state.size === "U" ? "Talla única" : "Talla " + esc(state.size)} <span aria-hidden="true">×</span>
       <span class="sr-only">Quitar filtro de talla</span></button>`);
   }
+  if (state.cat !== "todo") {
+    chips.push(`<button type="button" class="achip" onclick="setCat('todo')">
+      ${state.cat === "combos" ? "Combos" : "Descuentos"} <span aria-hidden="true">×</span>
+      <span class="sr-only">Quitar filtro de categoría</span></button>`);
+  }
   if (state.evento && !eventoFijo() && eventCtx.byId[state.evento]) {
     const ev = eventCtx.byId[state.evento];
     chips.push(`<button type="button" class="achip" onclick="setEvento('')">
@@ -582,6 +608,44 @@ function buildActiveChips() {
     chips.push(`<button type="button" class="achip achip-clear" onclick="resetFilters()">Limpiar todo</button>`);
   }
   return chips.join("");
+}
+
+// ── Descuentos y combos ───────────────────────────
+/** Elige la categoría (o vuelve a "todo" si ya estaba elegida). */
+function setCat(cat) {
+  state.cat = state.cat === cat ? "todo" : cat;
+  renderCategoryTabs();
+  render();
+}
+
+/**
+ * Pestañas "Todo / Descuentos / Combos". Sólo aparecen cuando hay algo que
+ * mostrar: mientras la propietaria no marque ofertas ni combos, el catálogo
+ * se ve exactamente como siempre.
+ */
+function renderCategoryTabs() {
+  const cont = document.getElementById("cat-tabs");
+  if (!cont) return;
+  const pool = eventoFijo() ? allProducts.filter(p => p.eventId === eventoFijo()) : allProducts;
+  const nOfertas = pool.filter(hasDiscount).length;
+  const nCombos  = pool.filter(isCombo).length;
+
+  // Si lo elegido se quedó sin nada (se agotó o se quitó), se vuelve a "todo".
+  if ((state.cat === "ofertas" && !nOfertas) || (state.cat === "combos" && !nCombos)) state.cat = "todo";
+
+  if (!nOfertas && !nCombos) { cont.innerHTML = ""; return; }
+
+  const tab = (key, label, n) => n === null || n > 0 ? `
+    <button type="button" class="cat-tab${state.cat === key ? " on" : ""}" aria-pressed="${state.cat === key}"
+            onclick="setCat('${key}')">${label}${n === null ? "" : ` <span class="f-count">${n}</span>`}</button>` : "";
+  cont.innerHTML = `
+    <span class="cat-tabs-label">Ver</span>
+    <div class="cat-tabs-bar" role="group" aria-label="Categoría">
+      <button type="button" class="cat-tab${state.cat === "todo" ? " on" : ""}" aria-pressed="${state.cat === "todo"}"
+              onclick="${state.cat === "todo" ? "" : "setCat('todo')"}">Todo</button>
+      ${tab("ofertas", "Descuentos", nOfertas)}
+      ${tab("combos", "Combos", nCombos)}
+    </div>`;
 }
 
 // ── Colecciones de temporada ──────────────────────
@@ -628,6 +692,7 @@ function syncUrl() {
   if (state.size !== "todas") params.set("talla", state.size);
   if (state.q)               params.set("q", state.q);
   if (state.evento)          params.set(eventoFijo() ? "c" : "evento", state.evento);
+  if (state.cat !== "todo")  params.set("categoria", state.cat);
   if (state.sort !== "nuevo") params.set("orden", state.sort);
   const qs = params.toString();
   history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
@@ -640,6 +705,9 @@ function readUrl() {
   if (SIZES.includes(talla)) state.size = talla;
   state.q = params.get("q") || "";
   state.evento = eventoFijo() || params.get("evento") || "";
+  const cat = (params.get("categoria") || "").toLowerCase();
+  if (cat === "ofertas" || cat === "descuentos") state.cat = "ofertas";
+  else if (cat === "combos") state.cat = "combos";
   const orden = params.get("orden");
   if (["precio-asc", "precio-desc", "nombre"].includes(orden)) state.sort = orden;
 

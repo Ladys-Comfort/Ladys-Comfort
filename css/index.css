@@ -597,3 +597,48 @@ footer {
 @media (max-width:380px) {
   #temporada { padding-left:1rem; padding-right:1rem; }
 }
+
+/* ════════════════════════════════════════════════
+   DESCUENTOS Y COMBOS
+   Sólo aparece cuando la propietaria marcó alguno (js/home.js).
+════════════════════════════════════════════════ */
+#ofertas { padding-top:5rem; padding-bottom:0; }
+#ofertas[hidden] { display:none; }
+#ofertas .sec-head { margin-bottom:2rem; }
+#ofertas-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:1.1rem; }
+#ofertas-grid.ofertas-uno { grid-template-columns:minmax(0,1fr); }
+
+.oferta-card {
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column; align-items:flex-start; gap:.35rem;
+  padding:2rem 2.2rem;
+  background:var(--dark-2);
+  border:1px solid var(--border-hi); border-radius:var(--rad-lg);
+  box-shadow:var(--shadow-1);
+  transition:transform var(--trans), box-shadow var(--trans), border-color var(--trans);
+}
+.oferta-card::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse at 100% 0%, var(--neon-glow), transparent 60%);
+  opacity:.55;
+}
+.oferta-card > * { position:relative; }
+@media (hover:hover) and (pointer:fine) {
+  .oferta-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-2); border-color:var(--neon); }
+}
+.oferta-kicker { font-size:.72rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--neon); }
+.oferta-big {
+  font-family:var(--disp); font-size:clamp(1.8rem, 4vw, 2.7rem); font-weight:700;
+  line-height:1.05; letter-spacing:-.02em; color:var(--white);
+}
+.oferta-sub { font-size:.92rem; color:var(--muted); }
+.oferta-cta {
+  margin-top:.9rem; padding:.7rem 1.4rem; border-radius:40px;
+  background:var(--neon); color:#fff; font-size:.88rem; font-weight:700;
+}
+
+@media (max-width:768px) {
+  #ofertas { padding-top:3.5rem; }
+  #ofertas-grid { grid-template-columns:minmax(0,1fr); }
+  .oferta-card { padding:1.5rem 1.4rem; }
+}

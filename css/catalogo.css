@@ -671,3 +671,63 @@
 @media (max-width:359px) {
   .event-banners { padding-left:1rem; padding-right:1rem; }
 }
+
+/* ════════════════════════════════════════════════
+   DESCUENTOS Y COMBOS
+   Las pestañas sólo existen si hay algo marcado (js/catalogo.js).
+════════════════════════════════════════════════ */
+.cat-tabs {
+  max-width:var(--maxw); margin:0 auto;
+  padding:1.4rem 2.5rem 0;
+  display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
+}
+.cat-tabs:empty { display:none; }
+.cat-tabs-label {
+  font-size:.72rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+}
+.cat-tabs-bar { display:flex; gap:.5rem; flex-wrap:wrap; }
+.cat-tab {
+  display:inline-flex; align-items:center; gap:.45rem;
+  padding:.55rem 1.2rem; border-radius:40px;
+  background:var(--dark-3); border:1px solid var(--border);
+  color:var(--text); font-size:.88rem; font-weight:600; letter-spacing:.02em;
+  transition:all var(--trans);
+}
+.cat-tab .f-count {
+  min-width:20px; padding:0 .4rem; border-radius:10px; text-align:center;
+  background:var(--neon-faint); color:var(--neon); font-size:.72rem; font-weight:700;
+}
+@media (hover:hover) and (pointer:fine) {
+  .cat-tab:hover { border-color:var(--border-hi); transform:translateY(-1px); }
+}
+.cat-tab.on { background:var(--neon); border-color:var(--neon); color:#fff; box-shadow:0 6px 20px var(--neon-glow); }
+.cat-tab.on .f-count { background:rgba(255,255,255,.22); color:#fff; }
+.cat-tab:focus-visible { outline:2px solid var(--neon); outline-offset:2px; }
+
+.badge.b-combo { color:#d4b8ff; }
+
+.pcard-combo { font-size:.76rem; color:var(--muted); line-height:1.45; }
+.pcard-combo b { color:var(--text); font-weight:600; }
+.pcard-save  { font-size:.76rem; font-weight:700; color:#1f9d5c; }
+[data-theme="dark"] .pcard-save { color:#4ade80; }
+
+.quick-save {
+  font-size:.78rem; font-weight:700; padding:.2rem .65rem; border-radius:20px;
+  background:rgba(61,220,132,.14); color:#1f9d5c;
+}
+[data-theme="dark"] .quick-save { color:#4ade80; }
+.quick-combo {
+  padding:.9rem 1rem; border-radius:var(--rad);
+  background:var(--neon-faint); border:1px solid var(--border);
+  display:flex; flex-direction:column; gap:.3rem;
+}
+.quick-combo p { font-size:.92rem; color:var(--text); line-height:1.5; }
+.quick-combo small { font-size:.76rem; color:var(--muted); line-height:1.5; }
+
+@media (max-width:768px) {
+  .cat-tabs { padding:1.1rem 1.2rem 0; }
+}
+@media (max-width:359px) {
+  .cat-tabs { padding-left:1rem; padding-right:1rem; }
+  .cat-tab { padding:.5rem 1rem; }
+}
