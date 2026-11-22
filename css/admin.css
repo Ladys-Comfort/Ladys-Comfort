@@ -757,3 +757,21 @@ a.btn-edit-row { text-decoration:none; }
 [data-theme="dark"] .cl-combo { color:#b79bff; }
 .check-label .cl-combo { color:#8b5cf6; }
 [data-theme="dark"] .check-label .cl-combo { color:#b79bff; }
+
+/* Selector de pijamas del combo */
+.cp-price { font-size:.76rem; color:var(--muted); white-space:nowrap; }
+.cp-list { display:flex; flex-direction:column; gap:.7rem; margin-top:.8rem; }
+.cp-item { padding:.7rem .8rem; border-radius:var(--rad); background:var(--dark-3); border:1px solid var(--border); }
+.cp-head { display:flex; align-items:center; gap:.6rem; }
+.cp-head strong { font-size:.88rem; flex:1; min-width:0; overflow-wrap:anywhere; }
+.cp-head small { font-size:.72rem; color:var(--muted); white-space:nowrap; }
+.cp-del { width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,.35); color:#fff; font-size:1rem; line-height:1; display:grid; place-items:center; }
+.cp-del:hover { background:var(--neon); }
+.cp-thumbs { display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.55rem; }
+.cp-thumb { width:62px; height:62px; border-radius:var(--rad-sm); overflow:hidden; padding:0; border:2px solid var(--border); background:var(--dark-2); opacity:.55; transition:opacity var(--trans), border-color var(--trans); }
+.cp-thumb img { width:100%; height:100%; object-fit:cover; }
+.cp-thumb.on { border-color:var(--neon); opacity:1; box-shadow:0 0 0 1px var(--neon); }
+.cp-nofoto { font-size:.78rem; color:var(--muted); margin-top:.4rem; }
+.fgroup .ev-prod input[type="checkbox"] { width:16px; height:16px; padding:0; flex:0 0 16px; background:none; border:none; box-shadow:none; accent-color:var(--neon); }
+.fgroup .search-box input { width:100%; }
+.fgroup label.ev-prod { display:flex; margin:0; font-size:inherit; font-weight:400; color:var(--text); }

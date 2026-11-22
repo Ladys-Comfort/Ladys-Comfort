@@ -315,8 +315,24 @@
             <input type="number" id="f-combo-regular" min="0" placeholder="150000">
           </div>
           <div class="fgroup field-full">
+            <label>Pijamas del combo <span class="opt">(opcional)</span></label>
+            <p class="field-note" style="margin:0 0 .6rem">
+              Arma el combo con pijamas <strong>distintas</strong> de tu catálogo. De cada una eliges qué fotos se muestran (una o varias).
+              Si prefieres, déjalo vacío y escribe abajo qué incluye.
+            </p>
+            <div class="search-box ev-prod-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="combo-prod-search" placeholder="Buscar pijama..." oninput="filterComboProducts()">
+            </div>
+            <div class="ev-prod-list" id="combo-prod-list"></div>
+            <div id="combo-photos"></div>
+            <p class="fsec-hint" id="combo-sum-hint"></p>
+          </div>
+          <div class="fgroup field-full">
             <label for="f-combo-includes">Qué incluye <span class="opt">(opcional)</span></label>
-            <input type="text" id="f-combo-includes" maxlength="120" placeholder="Ej: Camisa + short + pantalón">
+            <input type="text" id="f-combo-includes" maxlength="120" placeholder="Ej: Camisa + short + pantalón (si lo dejas vacío se usan los nombres de arriba)">
           </div>
           <p class="field-note field-full">
             En un combo, el <strong>Precio</strong> de arriba es el del combo completo. Si escribes lo que costarían por separado,
@@ -603,6 +619,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/events.js"></script>
+<script src="js/offers.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/admin-events.js"></script>
 

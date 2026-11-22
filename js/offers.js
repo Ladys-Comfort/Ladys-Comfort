@@ -39,3 +39,31 @@ function savingsOf(p) {
   if (!regular || regular <= pay) return null;
   return { regular, saved: regular - pay, pct: Math.round((1 - pay / regular) * 100) };
 }
+
+// ── Combos armados con pijamas distintas ──────────
+// Un combo puede tener `comboItems`: las pijamas que lo forman, cada una con las
+// fotos que la propietaria quiso mostrar. Es opcional; se guarda el nombre y las
+// fotos dentro del propio combo para que siga viéndose igual aunque después se
+// edite o se borre la pijama original.
+//   comboItems: [{ id, name, images: [url, ...] }, ...]
+
+const comboItemsOf = p =>
+  (isCombo(p) && Array.isArray(p.comboItems) ? p.comboItems : []).filter(it => it && typeof it === "object");
+
+/** Sólo http(s): las URLs vienen de la base de datos. */
+const comboItemImgs = it =>
+  (Array.isArray(it && it.images) ? it.images : []).filter(u => typeof u === "string" && /^https?:\/\//i.test(u));
+
+/** Fotos propias del combo + las elegidas de cada pijama, sin repetir. */
+function comboGallery(p) {
+  const own = (Array.isArray(p.images) ? p.images : []).filter(Boolean);
+  return [...new Set([...own, ...comboItemsOf(p).flatMap(comboItemImgs)])];
+}
+
+/** "A + B + C": lo que escribió la propietaria o, si no, los nombres de las pijamas. */
+const comboIncludesText = p =>
+  (p && p.comboIncludes && String(p.comboIncludes).trim()) ||
+  comboItemsOf(p).map(i => i.name).filter(Boolean).join(" + ");
+
+/** Todas las fotos de un producto; en un combo, también las de sus pijamas. */
+const galleryOf = p => isCombo(p) ? comboGallery(p) : (Array.isArray(p.images) ? p.images.filter(Boolean) : []);

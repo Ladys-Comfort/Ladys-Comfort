@@ -128,7 +128,8 @@ function visibleProducts() {
     const q = state.q.toLowerCase();
     list = list.filter(p =>
       (p.name || "").toLowerCase().includes(q) ||
-      (p.description || "").toLowerCase().includes(q)
+      (p.description || "").toLowerCase().includes(q) ||
+      (isCombo(p) && comboIncludesText(p).toLowerCase().includes(q))
     );
   }
 
@@ -199,6 +200,11 @@ function buildCard(p, index = 0) {
   const stock   = totalStock(p);
   const swatch  = swatchOf(p);
   const imgs    = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  // Combo armado con pijamas distintas y sin fotos propias: mosaico con la primera
+  // foto elegida de cada pijama (hasta 4).
+  const mosaico = combo && !imgs.length
+    ? comboItemsOf(p).map(it => comboItemImgs(it)[0]).filter(Boolean).slice(0, 4)
+    : [];
 
   // Si hay un filtro de talla activo, esa talla llega preseleccionada.
   const preset = state.size !== "todas" && avail.includes(state.size) ? state.size : null;
@@ -225,6 +231,9 @@ function buildCard(p, index = 0) {
   const visual = imgs.length
     ? `<img src="${esc(imgs[0])}" alt="${esc(p.name)}" class="pcard-img" ${loadAttr} decoding="async">
        ${imgs[1] ? `<img src="${esc(imgs[1])}" alt="" class="pcard-img pcard-img-alt" loading="lazy" decoding="async" aria-hidden="true">` : ""}`
+    : mosaico.length
+    ? `<div class="pcard-mosaic m${mosaico.length}">${mosaico.map((u, i) =>
+         `<img src="${esc(u)}" alt="${i ? "" : esc(p.name)}" ${i < 2 && index < 4 ? `loading="eager"` : `loading="lazy"`} decoding="async">`).join("")}</div>`
     : `<div class="pcard-pattern"></div>
        <div class="pcard-icon">
          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
@@ -279,7 +288,7 @@ function buildCard(p, index = 0) {
           : `<strong class="price-reg">${money(payPrice(p))}</strong>`}
       </div>
 
-      ${combo && p.comboIncludes ? `<p class="pcard-combo"><b>Incluye:</b> ${esc(p.comboIncludes)}</p>` : ""}
+      ${combo && comboIncludesText(p) ? `<p class="pcard-combo"><b>Incluye:</b> ${esc(comboIncludesText(p))}</p>` : ""}
       ${combo && sv ? `<p class="pcard-save">Ahorras ${money(sv.saved)}</p>` : ""}
 
       ${lowStock ? `<p class="pcard-low">${stock === 1 ? "¡Última unidad!" : `¡Sólo quedan ${stock}!`}</p>` : ""}
@@ -358,7 +367,7 @@ function closeQuick() {
 
 function buildQuick(p) {
   const id      = escJs(p.id);
-  const imgs    = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  const imgs    = galleryOf(p);
   const sv      = savingsOf(p);
   const combo   = isCombo(p);
   const stock   = totalStock(p);
@@ -431,7 +440,18 @@ function buildQuick(p) {
       ${combo ? `
       <div class="quick-combo">
         <p class="quick-label">Este combo incluye</p>
-        <p>${comboQtyOf(p)} pijamas${p.comboIncludes ? `: ${esc(p.comboIncludes)}` : ""}.</p>
+        ${comboItemsOf(p).length
+          ? `<ul class="quick-items">${comboItemsOf(p).map(it => {
+              const fotos = comboItemImgs(it);
+              return `<li>
+                <span class="qi-name">${esc(it.name || "Pijama")}</span>
+                ${fotos.length ? `<span class="qi-thumbs">${fotos.map(u => {
+                  const k = imgs.indexOf(u);
+                  return `<button type="button" class="qi-thumb" ${k >= 0 ? `onclick="setGallery(${k})"` : ""}
+                            aria-label="Ver foto de ${esc(it.name || "la pijama")}"><img src="${esc(u)}" alt="" loading="lazy"></button>`;
+                }).join("")}</span>` : ""}
+              </li>`; }).join("")}</ul>`
+          : `<p>${comboQtyOf(p)} pijamas${comboIncludesText(p) ? `: ${esc(comboIncludesText(p))}` : ""}.</p>`}
         <small>Eliges una talla para todo el combo. Si necesitas tallas distintas, escríbenos por WhatsApp y lo armamos.</small>
       </div>` : ""}
 
@@ -460,7 +480,7 @@ function buildQuick(p) {
 
 function setGallery(i) {
   const p = productById(quickId);
-  const imgs = (p?.images || []).filter(Boolean);
+  const imgs = p ? galleryOf(p) : [];
   if (!imgs[i]) return;
   galleryIdx = i;
   const main = document.getElementById("quick-main-img");
@@ -763,7 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Flechas para navegar la galería de la vista rápida.
     if (!quickId) return;
-    const imgs = (productById(quickId)?.images || []).filter(Boolean);
+    const imgs = galleryOf(productById(quickId) || {});
     if (imgs.length < 2) return;
     if (e.key === "ArrowRight") setGallery((galleryIdx + 1) % imgs.length);
     if (e.key === "ArrowLeft")  setGallery((galleryIdx - 1 + imgs.length) % imgs.length);

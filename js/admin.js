@@ -115,8 +115,10 @@ function buildRow(p) {
     verde:"#3ddc84", turquesa:"#00d4c8", otro:"#aaa"
   }[p.color?.toLowerCase()] || "#aaa";
 
-  const thumb = p.images && p.images[0]
-    ? `<img src="${esc(p.images[0])}" class="a-row-thumb" alt="Foto de ${esc(p.name)}" loading="lazy">`
+  const thumbSrc = (p.images && p.images[0]) ||
+    (Array.isArray(p.comboItems) && p.comboItems[0] && p.comboItems[0].images && p.comboItems[0].images[0]) || "";
+  const thumb = thumbSrc
+    ? `<img src="${esc(thumbSrc)}" class="a-row-thumb" alt="Foto de ${esc(p.name)}" loading="lazy">`
     : `<div class="a-row-thumb no-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
 
   return `
@@ -181,6 +183,7 @@ async function openEdit(id) {
   document.getElementById("f-combo-qty").value   = p.comboQty    || 2;
   document.getElementById("f-combo-regular").value  = p.comboRegularPrice || "";
   document.getElementById("f-combo-includes").value = p.comboIncludes     || "";
+  resetComboItems(p.comboItems);
   toggleOfferField();
   toggleComboField();
   ADMIN_SIZES.forEach(s => {
@@ -222,6 +225,7 @@ function clearForm() {
   ["f-combo-regular","f-combo-includes"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
+  resetComboItems([]);
   ADMIN_SIZES.forEach(s => {
     const el = document.getElementById(`f-${s}`); if (el) el.value = 0;
   });
@@ -250,6 +254,130 @@ function toggleTallaUnica() {
       : 'La tienda filtra por talla: sólo aparecen las tallas con stock mayor a 0. ' +
         'Si todas quedan en 0, el pijama se muestra como <strong>agotado</strong>.';
   }
+}
+
+
+// ── Combo armado con pijamas distintas ────────────
+// Cada pijama elegida guarda su nombre, su precio actual y las fotos que se
+// quieren mostrar. Queda dentro del combo (`comboItems`), así el combo se sigue
+// viendo igual aunque después se edite o se borre la pijama original.
+//   comboSel: id -> { name, price, all: [todas las fotos conocidas], sel: Set(fotos elegidas) }
+let comboSel = new Map();
+
+function resetComboItems(items) {
+  comboSel = new Map();
+  (items || []).forEach(it => {
+    if (!it || !it.id) return;
+    const prod = adminProducts.find(p => p.id === it.id);
+    const all  = [...new Set([...(prod && prod.images || []), ...(it.images || [])])];
+    comboSel.set(it.id, {
+      name:  (prod && prod.name) || it.name || "Pijama",
+      price: prod ? payPrice(prod) : 0,
+      all,
+      sel:   new Set(it.images || [])
+    });
+  });
+  renderComboPicker();
+}
+
+function renderComboPicker() {
+  const box = document.getElementById("combo-prod-list");
+  if (!box) return;
+  const lista = adminProducts
+    .filter(p => !isCombo(p) && p.id !== editingId)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || "", "es"));
+
+  box.innerHTML = lista.length ? lista.map(p => {
+    const thumb = p.images && p.images[0]
+      ? `<img src="${esc(p.images[0])}" alt="" loading="lazy">` : `<span class="ev-prod-noimg"></span>`;
+    return `
+    <label class="ev-prod" data-name="${esc((p.name || "").toLowerCase())}">
+      <input type="checkbox" value="${esc(p.id)}" ${comboSel.has(p.id) ? "checked" : ""}
+             onchange="toggleComboProduct(this.value, this.checked)">
+      ${thumb}
+      <span class="ev-prod-name">${esc(p.name)}</span>
+      <small class="cp-price">${money(payPrice(p))}</small>
+    </label>`;
+  }).join("") : `<p class="ev-prod-empty">Todavía no hay pijamas para armar un combo.</p>`;
+
+  const q = document.getElementById("combo-prod-search");
+  if (q) q.value = "";
+  renderComboPhotos();
+  updateComboSum();
+}
+
+function filterComboProducts() {
+  const q = document.getElementById("combo-prod-search").value.trim().toLowerCase();
+  document.querySelectorAll("#combo-prod-list .ev-prod").forEach(el => {
+    el.style.display = !q || el.dataset.name.includes(q) ? "" : "none";
+  });
+}
+
+function toggleComboProduct(id, on) {
+  if (on) {
+    const prod = adminProducts.find(p => p.id === id);
+    if (!prod) return;
+    const imgs = prod.images || [];
+    comboSel.set(id, {
+      name: prod.name, price: payPrice(prod), all: [...imgs],
+      sel: new Set(imgs[0] ? [imgs[0]] : [])          // por defecto, la primera foto
+    });
+  } else {
+    comboSel.delete(id);
+    const cb = document.querySelector(`#combo-prod-list input[value="${CSS.escape(id)}"]`);
+    if (cb) cb.checked = false;
+  }
+  renderComboPhotos();
+  updateComboSum();
+}
+
+function toggleComboPhoto(id, idx) {
+  const it = comboSel.get(id);
+  if (!it) return;
+  const url = it.all[idx];
+  if (it.sel.has(url)) it.sel.delete(url); else it.sel.add(url);
+  renderComboPhotos();
+}
+
+function renderComboPhotos() {
+  const box = document.getElementById("combo-photos");
+  if (!box) return;
+  if (!comboSel.size) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="cp-list">` + [...comboSel].map(([id, it]) => `
+    <div class="cp-item">
+      <div class="cp-head">
+        <strong>${esc(it.name)}</strong>
+        <small>${it.sel.size} ${it.sel.size === 1 ? "foto elegida" : "fotos elegidas"}</small>
+        <button type="button" class="cp-del" onclick="toggleComboProduct('${escJs(id)}', false)"
+                aria-label="Quitar ${esc(it.name)} del combo">&times;</button>
+      </div>
+      ${it.all.length
+        ? `<div class="cp-thumbs">${it.all.map((u, i) => `
+            <button type="button" class="cp-thumb${it.sel.has(u) ? " on" : ""}" aria-pressed="${it.sel.has(u)}"
+                    onclick="toggleComboPhoto('${escJs(id)}', ${i})" title="${it.sel.has(u) ? "Quitar esta foto" : "Mostrar esta foto"}">
+              <img src="${esc(u)}" alt="Foto ${i + 1} de ${esc(it.name)}" loading="lazy">
+            </button>`).join("")}</div>`
+        : `<p class="cp-nofoto">Esta pijama no tiene fotos.</p>`}
+    </div>`).join("") + `</div>`;
+}
+
+/** Suma de las pijamas elegidas: ayuda a poner el precio y a calcular el ahorro. */
+function updateComboSum() {
+  const hint = document.getElementById("combo-sum-hint");
+  const qty  = document.getElementById("f-combo-qty");
+  if (!hint) return;
+  const n = comboSel.size;
+  // Con pijamas elegidas, la cantidad sale de ahí.
+  if (qty) {
+    qty.disabled = n >= 2;
+    if (n >= 2) qty.value = n;
+  }
+  if (!n) { hint.textContent = ""; return; }
+  const total = [...comboSel.values()].reduce((s, it) => s + (Number(it.price) || 0), 0);
+  hint.innerHTML = n === 1
+    ? "Elige al menos 2 pijamas, o quita esta para escribir el combo a mano."
+    : `Por separado estas ${n} pijamas suman <strong>${money(total)}</strong>. ` +
+      `Si dejas vacío «Precio por separado», se usa esta suma para mostrar cuánto se ahorra.`;
 }
 
 function toggleOfferField() {
@@ -381,12 +509,25 @@ async function saveProduct() {
   }
 
   // Combo: cuántas pijamas trae y, si se quiere, cuánto costarían por separado.
-  const comboQty      = isCombo ? parseInt(document.getElementById("f-combo-qty").value, 10) : null;
-  const comboRegular  = isCombo ? (parseFloat(document.getElementById("f-combo-regular").value) || null) : null;
+  // Pijamas elegidas del catálogo (opcional). Cada una guarda su nombre y las fotos que se muestran.
+  const comboItems = isCombo
+    ? [...comboSel].map(([id, it]) => ({ id, name: it.name, images: [...it.sel] }))
+    : [];
+  if (isCombo && comboItems.length === 1) {
+    adminToast("Elige al menos 2 pijamas para el combo, o quita la que elegiste", "err"); return;
+  }
+  const comboQty      = isCombo
+    ? (comboItems.length >= 2 ? comboItems.length : parseInt(document.getElementById("f-combo-qty").value, 10))
+    : null;
+  const pagaCombo     = isOffer ? offerP : price;
+  const typedRegular  = isCombo ? (parseFloat(document.getElementById("f-combo-regular").value) || null) : null;
+  // Sin precio escrito, el "por separado" es la suma de las pijamas elegidas (si de verdad es mayor).
+  const sumaItems     = [...comboSel.values()].reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const comboRegular  = isCombo ? (typedRegular || (sumaItems > pagaCombo ? sumaItems : null)) : null;
   if (isCombo && (!comboQty || comboQty < 2)) {
     adminToast("Un combo incluye al menos 2 pijamas", "err"); return;
   }
-  if (isCombo && comboRegular && comboRegular <= (isOffer ? offerP : price)) {
+  if (isCombo && typedRegular && typedRegular <= pagaCombo) {
     adminToast("El precio por separado debe ser mayor que el precio del combo", "err"); return;
   }
 
@@ -427,6 +568,7 @@ async function saveProduct() {
       comboQty,
       comboIncludes:     isCombo ? document.getElementById("f-combo-includes").value.trim() : "",
       comboRegularPrice: comboRegular,
+      comboItems,
       isFeatured:  document.getElementById("f-is-feat").checked,
       isNew:       document.getElementById("f-is-new").checked,
       sizes,

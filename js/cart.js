@@ -51,7 +51,7 @@ function addToCart(product, size, qty = 1) {
     existing.qty   = capped;
     existing.price = price;              // refresca si cambió el precio en el admin
     existing.max   = stock;
-    existing.image = product.images?.[0] || existing.image || null;
+    existing.image = product.images?.[0] || product.comboItems?.[0]?.images?.[0] || existing.image || null;
   } else {
     cart.push({
       id:    product.id,
@@ -59,11 +59,14 @@ function addToCart(product, size, qty = 1) {
       size,
       price,
       qty:   capped,
-      image: product.images?.[0] || null,
+      image: product.images?.[0] || product.comboItems?.[0]?.images?.[0] || null,
       max:   stock,
       // Combo: se anota cuántas pijamas trae para que el pedido por WhatsApp sea claro.
       combo: product.isCombo === true ? Math.max(2, parseInt(product.comboQty, 10) || 2) : 0,
-      includes: product.isCombo === true ? (product.comboIncludes || "") : ""
+      includes: product.isCombo === true
+        ? ((product.comboIncludes || "").trim() ||
+           (Array.isArray(product.comboItems) ? product.comboItems.map(i => i && i.name).filter(Boolean).join(" + ") : ""))
+        : ""
     });
   }
 
